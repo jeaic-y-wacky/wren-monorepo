@@ -218,3 +218,70 @@ def handle_meeting_request(email):
 5. Keep trigger functions focused and single-purpose
 6. Add comments explaining the workflow
 '''
+
+
+# Section for dynamic integration docs
+DYNAMIC_TOOLS_SECTION = '''
+## Integration Discovery Tools
+
+You have additional tools for discovering integration documentation:
+
+1. **list_integrations()** - List all available integrations
+2. **get_integration_docs(name)** - Get detailed docs for a specific integration
+
+Use these when you need to know what integrations are available or how to use them.
+'''
+
+
+def build_system_prompt(
+    include_all_integration_docs: bool = False,
+    specific_integrations: list[str] | None = None,
+    include_dynamic_tools: bool = False,
+) -> str:
+    """
+    Build a system prompt with optional integration documentation.
+
+    Args:
+        include_all_integration_docs: Include docs for all integrations upfront
+        specific_integrations: Include docs for only these integrations
+        include_dynamic_tools: Include section about list/get_integration_docs tools
+
+    Returns:
+        Complete system prompt string
+
+    Usage patterns:
+        # Pattern 1: All docs upfront (simple, works for ~50 integrations)
+        prompt = build_system_prompt(include_all_integration_docs=True)
+
+        # Pattern 2: Dynamic loading (scales to 100+ integrations)
+        prompt = build_system_prompt(include_dynamic_tools=True)
+
+        # Pattern 3: Hybrid (common ones upfront, rest dynamic)
+        prompt = build_system_prompt(
+            specific_integrations=["gmail", "slack"],
+            include_dynamic_tools=True
+        )
+    """
+    sections = [SYSTEM_PROMPT]
+
+    # Add integration documentation if requested
+    if include_all_integration_docs or specific_integrations:
+        try:
+            from wren.integrations import render_integration_docs
+
+            if include_all_integration_docs:
+                integration_docs = render_integration_docs()
+            else:
+                integration_docs = render_integration_docs(specific_integrations)
+
+            if integration_docs.strip():
+                sections.append("\n---\n\n" + integration_docs)
+        except ImportError:
+            # Wren SDK not available, skip integration docs
+            pass
+
+    # Add dynamic tools section if requested
+    if include_dynamic_tools:
+        sections.append(DYNAMIC_TOOLS_SECTION)
+
+    return "\n".join(sections)

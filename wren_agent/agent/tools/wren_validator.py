@@ -93,16 +93,11 @@ class WrenAPIValidator:
             return self.DEFAULT_AI_METHODS
 
     def _discover_integrations(self) -> Set[str]:
-        """Discover valid wren.integrations via introspection."""
+        """Discover valid wren.integrations via SDK's list function."""
         try:
-            import inspect
+            from wren.integrations import list_integrations
 
-            import wren
-
-            integrations = set()
-            for name, _ in inspect.getmembers(wren.integrations):
-                if not name.startswith("_"):
-                    integrations.add(name)
+            integrations = set(list_integrations())
             return integrations if integrations else self.DEFAULT_INTEGRATIONS
         except ImportError:
             return self.DEFAULT_INTEGRATIONS

@@ -11,7 +11,10 @@ real connections or requiring credentials.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any, ClassVar
+
+if TYPE_CHECKING:
+    from .docs import IntegrationDocs
 
 
 class BaseIntegration(ABC):
@@ -21,7 +24,11 @@ class BaseIntegration(ABC):
     Subclasses should:
     1. Implement _connect() to establish the actual connection
     2. Call _ensure_connected() before any operation requiring connection
+    3. Define DOCS class attribute for self-documentation
     """
+
+    # Documentation for this integration (set in subclasses)
+    DOCS: ClassVar[IntegrationDocs | None] = None
 
     def __init__(self, name: str, config: dict[str, Any] | None = None) -> None:
         self._name = name

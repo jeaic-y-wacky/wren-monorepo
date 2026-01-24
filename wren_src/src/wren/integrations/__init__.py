@@ -11,14 +11,20 @@ Usage:
 
     # Later in functions
     messaging.post("Hello!")  # Connects lazily here
+
+    # Documentation access
+    wren.integrations.list()           # ["cron", "gmail", ...]
+    wren.integrations.get_docs("gmail") # IntegrationDocs for gmail
+    wren.integrations.render_docs()     # Markdown of all integration docs
 """
 
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ..core.registry import registry
 from .base import BaseIntegration
+from .docs import AuthType, IntegrationDocs, render_all_docs
 
 if TYPE_CHECKING:
     from typing import Type
@@ -26,13 +32,63 @@ if TYPE_CHECKING:
 # Registry of available integrations
 _INTEGRATION_REGISTRY: dict[str, Type[BaseIntegration]] = {}
 
+# Registry of integration documentation
+_DOCS_REGISTRY: dict[str, IntegrationDocs] = {}
+
 
 def register_integration(name: str):
-    """Decorator to register an integration class."""
+    """Decorator to register an integration class and its documentation."""
+
     def decorator(cls: Type[BaseIntegration]) -> Type[BaseIntegration]:
         _INTEGRATION_REGISTRY[name] = cls
+        # Also register DOCS if the class has them
+        if hasattr(cls, "DOCS") and cls.DOCS is not None:
+            _DOCS_REGISTRY[name] = cls.DOCS
         return cls
+
     return decorator
+
+
+def list_integrations() -> list[str]:
+    """
+    List all registered integration names.
+
+    Returns:
+        List of integration names (e.g., ["gmail", "slack", "cron", ...])
+    """
+    return sorted(_INTEGRATION_REGISTRY.keys())
+
+
+def get_integration_docs(name: str) -> IntegrationDocs | None:
+    """
+    Get documentation for a specific integration.
+
+    Args:
+        name: Integration name (e.g., "gmail")
+
+    Returns:
+        IntegrationDocs if available, None otherwise
+    """
+    return _DOCS_REGISTRY.get(name)
+
+
+def render_integration_docs(names: list[str] | None = None) -> str:
+    """
+    Render integration documentation as markdown.
+
+    Args:
+        names: Optional list of integration names to include.
+               If None, includes all integrations with docs.
+
+    Returns:
+        Markdown string with integration documentation
+    """
+    if names is None:
+        docs = list(_DOCS_REGISTRY.values())
+    else:
+        docs = [_DOCS_REGISTRY[n] for n in names if n in _DOCS_REGISTRY]
+
+    return render_all_docs(docs)
 
 
 class IntegrationInitializer:
@@ -90,7 +146,24 @@ class IntegrationManager:
     Example:
         gmail = wren.integrations.gmail.init()
         slack = wren.integrations.slack.init(token="...")
+
+    Documentation access:
+        wren.integrations.list()            # List all integration names
+        wren.integrations.get_docs("gmail") # Get docs for one integration
+        wren.integrations.render_docs()     # Render all docs as markdown
     """
+
+    def list(self) -> list[str]:
+        """List all registered integration names."""
+        return list_integrations()
+
+    def get_docs(self, name: str) -> IntegrationDocs | None:
+        """Get documentation for a specific integration."""
+        return get_integration_docs(name)
+
+    def render_docs(self, names: list[str] | None = None) -> str:
+        """Render integration documentation as markdown."""
+        return render_integration_docs(names)
 
     def __getattr__(self, name: str) -> IntegrationInitializer:
         """Return an initializer for the requested integration."""
@@ -102,12 +175,17 @@ integrations = IntegrationManager()
 
 # Import integrations to register them
 from . import cron  # noqa: E402, F401
-from . import messaging  # noqa: E402, F401
 from . import gmail  # noqa: E402, F401
+from . import messaging  # noqa: E402, F401
 from . import slack  # noqa: E402, F401
 
 __all__ = [
     "integrations",
     "BaseIntegration",
+    "AuthType",
+    "IntegrationDocs",
     "register_integration",
+    "list_integrations",
+    "get_integration_docs",
+    "render_integration_docs",
 ]

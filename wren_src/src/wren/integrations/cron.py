@@ -19,11 +19,12 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
-from .base import BaseIntegration
-from . import register_integration
 from ..core.registry import registry
+from . import register_integration
+from .base import BaseIntegration
+from .docs import AuthType, IntegrationDocs, MethodDoc, ParamDoc
 
 
 @register_integration("cron")
@@ -36,15 +37,72 @@ class CronIntegration(BaseIntegration):
     to decorators.
     """
 
+    DOCS: ClassVar[IntegrationDocs] = IntegrationDocs(
+        name="cron",
+        description="Schedule tasks using cron expressions. Prefer using @wren.on_schedule() decorator instead of this integration directly.",
+        init_params=[],
+        methods=[
+            MethodDoc(
+                name="schedule",
+                description="Manually register a scheduled task. Use this when decorators aren't suitable (e.g., dynamic schedule generation).",
+                params=[
+                    ParamDoc(
+                        name="cron_expr",
+                        type="str",
+                        description="Cron expression (minute hour day month weekday)",
+                        required=True,
+                    ),
+                    ParamDoc(
+                        name="func",
+                        type="Callable",
+                        description="Function to schedule",
+                        required=True,
+                    ),
+                    ParamDoc(
+                        name="timezone",
+                        type="str",
+                        description="Timezone name (e.g., 'America/New_York')",
+                        required=False,
+                        default="None",
+                    ),
+                ],
+                returns="None",
+                example='cron.schedule("0 9 * * 1-5", send_weekday_report)',
+            ),
+            MethodDoc(
+                name="get_schedules",
+                description="Return all registered schedules (for debugging/testing).",
+                params=[],
+                returns="list[dict] - List of schedule configurations",
+                example="schedules = cron.get_schedules()",
+            ),
+        ],
+        example="""import wren
+
+cron = wren.integrations.cron.init()
+
+# Preferred: use decorator
+@wren.on_schedule("0 9 * * *")
+def daily_report():
+    generate_and_send_report()
+
+# Alternative: manual registration for dynamic schedules
+def create_schedule(hour: int):
+    cron.schedule(f"0 {hour} * * *", check_status)
+
+# Common cron patterns:
+# "0 9 * * *"     - Daily at 9 AM
+# "*/15 * * * *"  - Every 15 minutes
+# "0 0 * * 0"     - Weekly on Sunday at midnight
+# "0 9 * * 1-5"   - Weekdays at 9 AM""",
+    )
+
     def _connect(self) -> None:
         """No actual connection needed for cron."""
         pass
 
     def schedule(
-        self,
-        cron_expr: str,
-        func: Callable[..., Any],
-        timezone: str | None = None
+        self, cron_expr: str, func: Callable[..., Any], timezone: str | None = None
     ) -> None:
         """
         Manually register a scheduled task.
