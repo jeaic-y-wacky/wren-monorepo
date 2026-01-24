@@ -77,19 +77,20 @@ jobs:
           cd wren_src
           uv run mypy src/wren
 
-      - name: Run tests
+      - name: Run tests with coverage
         run: |
           cd wren_src
-          uv run pytest --verbose --cov=wren --cov-report=xml --cov-report=term-missing
+          mkdir -p reports
+          uv run pytest --verbose --cov=wren --cov-branch --cov-report=xml:reports/coverage.xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          file: ./wren_src/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./wren_src/reports/coverage.xml
           flags: wren-src
           name: wren-src-${{ matrix.python-version }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   # Test wren_agent (AI Agent)
   test-wren-agent:
@@ -120,10 +121,20 @@ jobs:
           cd wren_agent
           uv run ruff check agent tests
 
-      - name: Run unit tests
+      - name: Run unit tests with coverage
         run: |
           cd wren_agent
-          uv run pytest tests/unit/ --verbose
+          mkdir -p reports
+          uv run pytest tests/unit/ --verbose --cov=agent --cov-branch --cov-report=xml:reports/coverage.xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./wren_agent/reports/coverage.xml
+          flags: wren-agent
+          name: wren-agent
+          fail_ci_if_error: false
 
       - name: Install semgrep for security testing
         run: |
@@ -168,10 +179,20 @@ jobs:
           cd wren_backend
           uv sync --dev
 
-      - name: Run unit tests
+      - name: Run unit tests with coverage
         run: |
           cd wren_backend
-          uv run pytest tests/ --verbose
+          mkdir -p reports
+          uv run pytest tests/ --verbose --cov=wren_backend --cov-branch --cov-report=xml:reports/coverage.xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./wren_backend/reports/coverage.xml
+          flags: wren-backend
+          name: wren-backend
+          fail_ci_if_error: false
 
       - name: Run E2E tests
         run: |
