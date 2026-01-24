@@ -1,0 +1,37 @@
+[project]
+name = "wren-backend"
+version = "0.1.0"
+description = "Execution platform for agent-written scripts"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "apscheduler>=3.11.1",
+    "fastapi>=0.124.0",
+    "pydantic>=2.12.5",
+    "python-multipart>=0.0.20",
+    "sqlalchemy[asyncio]>=2.0.44",
+    "structlog>=25.5.0",
+    "uvicorn>=0.38.0",
+]
+
+[project.scripts]
+wren-backend = "wren_backend.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wren_backend"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.27.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

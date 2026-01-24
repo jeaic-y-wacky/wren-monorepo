@@ -1,0 +1,126 @@
+rules:
+  # =============================================================================
+  # SECURITY RULES - These block script writes entirely (CRITICAL/HIGH severity)
+  # =============================================================================
+
+  - id: block-dangerous-imports
+    languages: [python]
+    severity: CRITICAL
+    message: >-
+      Dangerous import blocked for security.
+      Use Wren integrations for external services instead.
+    pattern-either:
+      # System/process execution
+      - pattern: import os
+      - pattern: import subprocess
+      - pattern: import commands
+      - pattern: import pty
+      - pattern: import fcntl
+
+      # Network access
+      - pattern: import socket
+      - pattern: import socketserver
+      - pattern: import requests
+      - pattern: import urllib
+      - pattern: import urllib3
+      - pattern: import httplib
+      - pattern: import http.client
+      - pattern: import ftplib
+      - pattern: import smtplib
+      - pattern: import poplib
+      - pattern: import imaplib
+      - pattern: import telnetlib
+
+      # Low-level / unsafe
+      - pattern: import ctypes
+      - pattern: import cffi
+
+      # Serialization (code execution risk)
+      - pattern: import pickle
+      - pattern: import cPickle
+      - pattern: import shelve
+      - pattern: import marshal
+
+      # File system operations
+      - pattern: import shutil
+      - pattern: import tempfile
+      - pattern: import glob
+
+      # Multiprocessing (sandbox escape risk)
+      - pattern: import multiprocessing
+      - pattern: import threading
+      - pattern: import concurrent
+
+      # System info leakage
+      - pattern: import platform
+      - pattern: import getpass
+      - pattern: import pwd
+      - pattern: import grp
+
+  - id: block-dangerous-from-imports
+    languages: [python]
+    severity: CRITICAL
+    message: >-
+      Dangerous import blocked for security.
+      Use Wren integrations for external services instead.
+    pattern-either:
+      - pattern: from os import $X
+      - pattern: from subprocess import $X
+      - pattern: from socket import $X
+      - pattern: from ctypes import $X
+      - pattern: from pickle import $X
+      - pattern: from shutil import $X
+      - pattern: from multiprocessing import $X
+      - pattern: from threading import $X
+
+  - id: block-eval-exec
+    languages: [python]
+    severity: CRITICAL
+    message: >-
+      Use of '$1' is blocked - it executes arbitrary code.
+      Use wren.ai() for dynamic text processing instead.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: exec(...)
+      - pattern: compile($CODE, ...)
+      - pattern: __import__(...)
+
+  - id: block-file-write
+    languages: [python]
+    severity: HIGH
+    message: >-
+      File write operations are blocked.
+      Use Wren integrations for data storage.
+    pattern-either:
+      - pattern: open($PATH, "w")
+      - pattern: open($PATH, "w", ...)
+      - pattern: open($PATH, "a")
+      - pattern: open($PATH, "a", ...)
+      - pattern: open($PATH, "x")
+      - pattern: open($PATH, "x", ...)
+      - pattern: open($PATH, "wb")
+      - pattern: open($PATH, "wb", ...)
+      - pattern: open($PATH, "ab")
+      - pattern: open($PATH, "ab", ...)
+      - pattern: open($PATH, mode="w")
+      - pattern: open($PATH, mode="w", ...)
+      - pattern: open($PATH, mode="a")
+      - pattern: open($PATH, mode="a", ...)
+      - pattern: open($PATH, mode="x")
+      - pattern: open($PATH, mode="x", ...)
+
+  - id: block-dangerous-builtins
+    languages: [python]
+    severity: HIGH
+    message: >-
+      Use of '$1' is blocked for security.
+      These functions can bypass security controls.
+    pattern-either:
+      - pattern: globals()
+      - pattern: locals()
+      - pattern: vars()
+      - pattern: vars(...)
+      - pattern: setattr(...)
+      - pattern: delattr(...)
+      - pattern: breakpoint()
+      - pattern: breakpoint(...)
