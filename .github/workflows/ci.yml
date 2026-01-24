@@ -146,9 +146,7 @@ jobs:
           cd wren_agent
           uv run pytest tests/unit/test_static_analyzer.py -v
 
-      # Integration tests only run if OPENAI_API_KEY is available
       - name: Run integration tests
-        if: secrets.OPENAI_API_KEY != null
         run: |
           cd wren_agent
           uv run pytest tests/integration/ --verbose
@@ -237,7 +235,6 @@ jobs:
           sleep 5
 
       - name: Test agent -> SDK -> backend workflow
-        if: secrets.OPENAI_API_KEY != null
         run: |
           # Test full workflow: Agent generates script -> SDK validates -> Backend deploys
           export WREN_PLATFORM_URL=http://127.0.0.1:8002
