@@ -6,7 +6,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from agents import function_tool, RunContextWrapper
+from agents import RunContextWrapper, function_tool
 
 from ..context import AgentContext
 
@@ -36,22 +36,28 @@ async def test_wren_script(
     elif ctx.context.script_path:
         path = ctx.context.script_path
     else:
-        return json.dumps({
-            "valid": False,
-            "error_type": "AgentFixableError",
-            "error_code": "NO_SCRIPT",
-            "message": "No script to test. Write a script first using write_wren_script.",
-            "fix_hint": "Call write_wren_script(filename, code) to create a script before testing.",
-        }, indent=2)
+        return json.dumps(
+            {
+                "valid": False,
+                "error_type": "AgentFixableError",
+                "error_code": "NO_SCRIPT",
+                "message": "No script to test. Write a script first using write_wren_script.",
+                "fix_hint": "Call write_wren_script(filename, code) to create a script first.",
+            },
+            indent=2,
+        )
 
     if not path.exists():
-        return json.dumps({
-            "valid": False,
-            "error_type": "AgentFixableError",
-            "error_code": "FILE_NOT_FOUND",
-            "message": f"Script not found: {path}",
-            "fix_hint": "Check the script path or write the script first.",
-        }, indent=2)
+        return json.dumps(
+            {
+                "valid": False,
+                "error_type": "AgentFixableError",
+                "error_code": "FILE_NOT_FOUND",
+                "message": f"Script not found: {path}",
+                "fix_hint": "Check the script path or write the script first.",
+            },
+            indent=2,
+        )
 
     # Run wren test with JSON output
     try:

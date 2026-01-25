@@ -1,11 +1,10 @@
 """Tests for wren.integrations module."""
 
 import pytest
-from wren.integrations import integrations, IntegrationInitializer
-from wren.integrations.base import BaseIntegration
-from wren.integrations.cron import CronIntegration
-from wren.integrations.messaging import MessagingIntegration, Message
+
 from wren.core.registry import registry
+from wren.integrations import IntegrationInitializer, integrations
+from wren.integrations.cron import CronIntegration
 
 
 @pytest.fixture
@@ -89,7 +88,9 @@ class TestCronIntegration:
         cron.schedule("*/5 * * * *", my_task, "UTC")
 
         metadata = clean_registry.get_metadata()
-        schedules = [t for t in metadata["triggers"] if t["type"] == "schedule" and t["func"] == "my_task"]
+        schedules = [
+            t for t in metadata["triggers"] if t["type"] == "schedule" and t["func"] == "my_task"
+        ]
         assert len(schedules) == 1
         assert schedules[0]["config"]["cron"] == "*/5 * * * *"
 
@@ -168,8 +169,8 @@ class TestIntegrationUsagePattern:
     def test_module_level_init_pattern(self, clean_registry):
         """Test the typical module-level initialization pattern."""
         # Simulating top of a user's script
-        cron = integrations.cron.init()
-        messaging = integrations.messaging.init(default_channel="#alerts")
+        _cron = integrations.cron.init()  # noqa: F841
+        _messaging = integrations.messaging.init(default_channel="#alerts")  # noqa: F841
 
         # Verify registrations happened
         metadata = clean_registry.get_metadata()

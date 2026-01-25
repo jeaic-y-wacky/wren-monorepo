@@ -1,7 +1,8 @@
 """Tests for wren.core.registry module."""
 
 import pytest
-from wren.core.registry import WrenRegistry, registry, get_metadata, TriggerEntry
+
+from wren.core.registry import get_metadata, registry
 
 
 @pytest.fixture
@@ -33,6 +34,7 @@ class TestWrenRegistry:
 
     def test_register_trigger_schedule(self, clean_registry):
         """Trigger registration should record type, config, and function."""
+
         def my_job():
             pass
 
@@ -49,6 +51,7 @@ class TestWrenRegistry:
 
     def test_register_trigger_email(self, clean_registry):
         """Email trigger registration should record filter in config."""
+
         def handle_email():
             pass
 
@@ -64,6 +67,7 @@ class TestWrenRegistry:
 
     def test_register_trigger_custom_type(self, clean_registry):
         """Custom trigger types should be supported."""
+
         def webhook_handler():
             pass
 
@@ -76,6 +80,7 @@ class TestWrenRegistry:
 
     def test_get_triggers_by_type(self, clean_registry):
         """get_triggers_by_type should filter triggers."""
+
         def schedule_job():
             pass
 
@@ -104,6 +109,7 @@ class TestWrenRegistry:
 
     def test_get_functions(self, clean_registry):
         """get_functions should return callable mapping."""
+
         def daily_job():
             return "daily"
 
@@ -138,6 +144,7 @@ class TestModuleLevelRegistry:
     def test_global_registry_exists(self):
         """Global registry should be importable."""
         from wren import registry as wren_registry
+
         assert wren_registry is not None
 
     def test_get_metadata_function(self, clean_registry):

@@ -8,7 +8,7 @@ before the script is written to disk.
 import json
 from pathlib import Path
 
-from agents import function_tool, RunContextWrapper
+from agents import RunContextWrapper, function_tool
 
 from ..context import AgentContext
 from .static_analyzer import get_analyzer

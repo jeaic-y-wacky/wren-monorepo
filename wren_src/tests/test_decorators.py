@@ -1,8 +1,9 @@
 """Tests for wren.triggers module."""
 
 import pytest
-from wren.triggers import on_schedule, on_email
+
 from wren.core.registry import registry
+from wren.triggers import on_email, on_schedule
 
 
 @pytest.fixture
@@ -23,6 +24,7 @@ class TestOnScheduleDecorator:
 
     def test_registers_schedule(self, clean_registry):
         """Decorator should register schedule in registry."""
+
         @on_schedule("0 9 * * *")
         def daily_task():
             pass
@@ -35,6 +37,7 @@ class TestOnScheduleDecorator:
 
     def test_registers_schedule_with_timezone(self, clean_registry):
         """Decorator should record timezone when provided."""
+
         @on_schedule("0 9 * * *", timezone="America/New_York")
         def ny_task():
             pass
@@ -45,6 +48,7 @@ class TestOnScheduleDecorator:
 
     def test_returns_original_function(self, clean_registry):
         """Decorator should return the original function unchanged."""
+
         def original():
             return "test"
 
@@ -55,6 +59,7 @@ class TestOnScheduleDecorator:
 
     def test_preserves_function_attributes(self, clean_registry):
         """Decorator should preserve function name and docstring."""
+
         @on_schedule("0 9 * * *")
         def documented_task():
             """This is a documented task."""
@@ -65,6 +70,7 @@ class TestOnScheduleDecorator:
 
     def test_multiple_schedules(self, clean_registry):
         """Multiple decorators should register multiple schedules."""
+
         @on_schedule("0 9 * * *")
         def task1():
             pass
@@ -83,6 +89,7 @@ class TestOnEmailDecorator:
 
     def test_registers_email_trigger(self, clean_registry):
         """Decorator should register email trigger in registry."""
+
         @on_email(filter={"subject": "urgent"})
         def handle_urgent():
             pass
@@ -95,6 +102,7 @@ class TestOnEmailDecorator:
 
     def test_registers_with_kwargs(self, clean_registry):
         """Decorator should accept filter as kwargs."""
+
         @on_email(subject="invoice", from_addr="*@vendor.com")
         def handle_invoice():
             pass
@@ -106,6 +114,7 @@ class TestOnEmailDecorator:
 
     def test_registers_with_empty_filter(self, clean_registry):
         """Decorator with no filter should register empty dict."""
+
         @on_email()
         def handle_all():
             pass
@@ -116,6 +125,7 @@ class TestOnEmailDecorator:
 
     def test_returns_original_function(self, clean_registry):
         """Decorator should return the original function unchanged."""
+
         def original(email):
             return email["subject"]
 
@@ -126,6 +136,7 @@ class TestOnEmailDecorator:
 
     def test_combined_filter_and_kwargs(self, clean_registry):
         """Filter dict and kwargs should be merged."""
+
         @on_email(filter={"subject": "test"}, from_addr="*@example.com")
         def combined_filter():
             pass
@@ -141,6 +152,7 @@ class TestDecoratorInteraction:
 
     def test_multiple_decorators_on_same_function(self, clean_registry):
         """A function can have both schedule and email decorators."""
+
         @on_schedule("0 9 * * *")
         @on_email(subject="manual-trigger")
         def dual_trigger():

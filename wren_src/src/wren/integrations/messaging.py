@@ -24,7 +24,7 @@ from typing import Any, ClassVar
 
 from . import register_integration
 from .base import BaseIntegration
-from .docs import AuthType, IntegrationDocs, MethodDoc, ParamDoc
+from .docs import IntegrationDocs, MethodDoc, ParamDoc
 
 
 @dataclass

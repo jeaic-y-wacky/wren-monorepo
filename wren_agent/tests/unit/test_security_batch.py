@@ -52,7 +52,6 @@ DANGEROUS_PATTERNS = [
     ("import getpass", "block-dangerous-imports"),
     ("import pwd", "block-dangerous-imports"),
     ("import grp", "block-dangerous-imports"),
-
     # === block-dangerous-from-imports ===
     ("from os import system", "block-dangerous-from-imports"),
     ("from os import path", "block-dangerous-from-imports"),
@@ -64,7 +63,6 @@ DANGEROUS_PATTERNS = [
     ("from shutil import rmtree", "block-dangerous-from-imports"),
     ("from multiprocessing import Process", "block-dangerous-from-imports"),
     ("from threading import Thread", "block-dangerous-from-imports"),
-
     # === block-eval-exec ===
     ('eval("1 + 1")', "block-eval-exec"),
     ("eval(user_input)", "block-eval-exec"),
@@ -72,7 +70,6 @@ DANGEROUS_PATTERNS = [
     ("exec(code_string)", "block-eval-exec"),
     ('compile("x", "file", "exec")', "block-eval-exec"),
     ('__import__("os")', "block-eval-exec"),
-
     # === block-file-write ===
     ('open("file.txt", "w")', "block-file-write"),
     ('open("file.txt", "a")', "block-file-write"),
@@ -81,7 +78,6 @@ DANGEROUS_PATTERNS = [
     ('open("file.txt", "ab")', "block-file-write"),
     ('open(path, mode="w")', "block-file-write"),
     ('open(path, mode="a")', "block-file-write"),
-
     # === block-dangerous-builtins ===
     ("globals()", "block-dangerous-builtins"),
     ("locals()", "block-dangerous-builtins"),
@@ -124,27 +120,29 @@ class TestSecurityBatch:
         lines = []
         line_to_pattern = {}
 
-        for i, (code, rule_id) in enumerate(DANGEROUS_PATTERNS):
+        for _, (code, rule_id) in enumerate(DANGEROUS_PATTERNS):
             # Each pattern gets its own line(s)
-            code_lines = code.strip().split('\n')
+            code_lines = code.strip().split("\n")
             start_line = len(lines) + 1
             lines.extend(code_lines)
             # Map each line of this pattern
             for offset in range(len(code_lines)):
                 line_to_pattern[start_line + offset] = (code, rule_id)
 
-        combined_code = '\n'.join(lines)
+        combined_code = "\n".join(lines)
 
         # Write to temp file and run semgrep
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(combined_code)
             temp_path = f.name
 
         try:
             result = subprocess.run(
                 [
-                    "semgrep", "scan",
-                    "--config", str(RULES_PATH),
+                    "semgrep",
+                    "scan",
+                    "--config",
+                    str(RULES_PATH),
                     "--json",
                     "--quiet",
                     temp_path,
@@ -191,10 +189,12 @@ class TestSecurityBatch:
                 if not matched_rules:
                     missing.append(f"Line {line}: {code!r} - expected {expected_rule}, got nothing")
                 else:
-                    missing.append(f"Line {line}: {code!r} - expected {expected_rule}, got {matched_rules}")
+                    missing.append(
+                        f"Line {line}: {code!r} - expected {expected_rule}, got {matched_rules}"
+                    )
 
         if missing:
-            pytest.fail(f"Missing detections:\n" + "\n".join(missing))
+            pytest.fail("Missing detections:\n" + "\n".join(missing))
 
     def test_finding_count(self, semgrep_results):
         """Verify we get the expected number of findings."""
@@ -209,17 +209,19 @@ class TestSecurityBatch:
 
     def test_no_false_positives_on_safe_code(self):
         """Verify safe code doesn't trigger security rules."""
-        combined_code = '\n'.join(SAFE_PATTERNS)
+        combined_code = "\n".join(SAFE_PATTERNS)
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(combined_code)
             temp_path = f.name
 
         try:
             result = subprocess.run(
                 [
-                    "semgrep", "scan",
-                    "--config", str(RULES_PATH),
+                    "semgrep",
+                    "scan",
+                    "--config",
+                    str(RULES_PATH),
                     "--json",
                     "--quiet",
                     temp_path,
@@ -236,11 +238,8 @@ class TestSecurityBatch:
                 findings = []
 
             if findings:
-                false_positives = [
-                    f"Line {f['start']['line']}: {f['check_id']}"
-                    for f in findings
-                ]
-                pytest.fail(f"False positives on safe code:\n" + "\n".join(false_positives))
+                false_positives = [f"Line {f['start']['line']}: {f['check_id']}" for f in findings]
+                pytest.fail("False positives on safe code:\n" + "\n".join(false_positives))
 
             print(f"\n✓ No false positives on {len(SAFE_PATTERNS)} safe patterns")
 

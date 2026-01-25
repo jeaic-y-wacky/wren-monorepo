@@ -6,11 +6,11 @@ Context flows automatically through the call stack without parameter passing.
 """
 
 import threading
-from typing import Any, Optional, Dict, List
+import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-import uuid
 from datetime import datetime
+from typing import Any, Optional
 
 
 @dataclass
@@ -19,14 +19,14 @@ class ContextFrame:
 
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = field(default_factory=datetime.utcnow)
-    data: Dict[str, Any] = field(default_factory=dict)
-    parent: Optional['ContextFrame'] = None
+    data: dict[str, Any] = field(default_factory=dict)
+    parent: Optional["ContextFrame"] = None
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get value from this frame or parent frames."""
         if key in self.data:
             return self.data[key]
-        elif self.parent:
+        if self.parent:
             return self.parent.get(key, default)
         return default
 
@@ -38,7 +38,7 @@ class ContextFrame:
         """Update multiple values in this frame."""
         self.data.update(kwargs)
 
-    def all_data(self) -> Dict[str, Any]:
+    def all_data(self) -> dict[str, Any]:
         """Get all data from this frame and parent frames."""
         result = {}
         if self.parent:
@@ -58,14 +58,14 @@ class WrenContext:
         self._local = threading.local()
 
     @property
-    def _stack(self) -> List[ContextFrame]:
+    def _stack(self) -> list[ContextFrame]:
         """Get the context stack for the current thread."""
-        if not hasattr(self._local, 'stack'):
+        if not hasattr(self._local, "stack"):
             self._local.stack = []
         return self._local.stack
 
     @property
-    def current(self) -> Optional[ContextFrame]:
+    def current(self) -> ContextFrame | None:
         """Get the current context frame."""
         stack = self._stack
         return stack[-1] if stack else None
@@ -78,7 +78,7 @@ class WrenContext:
         self._stack.append(frame)
         return frame
 
-    def pop(self) -> Optional[ContextFrame]:
+    def pop(self) -> ContextFrame | None:
         """Pop the current context frame from the stack."""
         stack = self._stack
         if stack:
@@ -128,7 +128,7 @@ class WrenContext:
         self._local.stack = []
 
     @property
-    def all_data(self) -> Dict[str, Any]:
+    def all_data(self) -> dict[str, Any]:
         """Get all data from the current context stack."""
         frame = self.current
         if frame:
@@ -142,7 +142,7 @@ class WrenContext:
         Example:
             context.email  # Same as context.get('email')
         """
-        if name.startswith('_'):
+        if name.startswith("_"):
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
         return self.get(name)
 
@@ -152,7 +152,7 @@ class WrenContext:
         Example:
             context.email = email_obj  # Same as context.set('email', email_obj)
         """
-        if name.startswith('_') or name in ['_local']:
+        if name.startswith("_") or name in ["_local"]:
             super().__setattr__(name, value)
         else:
             self.set(name, value)
@@ -188,23 +188,26 @@ def with_context(**ctx_data):
             if context.source == "email":
                 ...
     """
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             with context.scope(**ctx_data):
                 return func(*args, **kwargs)
+
         wrapper.__name__ = func.__name__
         wrapper.__doc__ = func.__doc__
         return wrapper
+
     return decorator
 
 
 # Convenience function to get request/session ID
 def get_request_id() -> str:
     """Get current request ID from context or generate new one."""
-    request_id = context.get('request_id')
+    request_id = context.get("request_id")
     if not request_id:
         request_id = str(uuid.uuid4())
-        context.set('request_id', request_id)
+        context.set("request_id", request_id)
     return request_id
 
 
@@ -213,6 +216,7 @@ def is_async_context() -> bool:
     """Check if running in an async context."""
     try:
         import asyncio
+
         asyncio.current_task()
         return True
     except RuntimeError:

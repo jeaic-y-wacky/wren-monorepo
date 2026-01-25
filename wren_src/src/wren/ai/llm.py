@@ -5,12 +5,11 @@ This module is responsible for talking to the underlying AI provider
 and should be kept separate from the higher-level type inference logic.
 """
 
-from typing import Any, Dict, List, Optional
 import logging
+from typing import Any
 
 from ..core.config import get_config
-from ..errors.base import ConfigurationError, AIProviderError
-
+from ..errors.base import AIProviderError, ConfigurationError
 
 logger = logging.getLogger(__name__)
 
@@ -37,16 +36,16 @@ class LLMRouter:
                 raise ConfigurationError(
                     message="OpenAI package not installed",
                     fix="Install OpenAI package",
-                    example="pip install openai"
+                    example="pip install openai",
                 )
 
         return self._client
 
     def complete(
         self,
-        prompt: Optional[str] = None,
+        prompt: str | None = None,
         *,
-        messages: Optional[List[Dict[str, str]]] = None,
+        messages: list[dict[str, str]] | None = None,
         **kwargs: Any,
     ) -> str:
         """Send a completion request to the LLM provider."""
@@ -62,7 +61,9 @@ class LLMRouter:
             messages = [*messages, {"role": "user", "content": prompt}]
 
         if config.show_prompts:
-            rendered = "\n".join(f"{m.get('role', 'user')}: {m.get('content', '')}" for m in messages)
+            rendered = "\n".join(
+                f"{m.get('role', 'user')}: {m.get('content', '')}" for m in messages
+            )
             logger.info(f"LLM prompt:\n{rendered}")
 
         params = dict(kwargs)
@@ -70,7 +71,7 @@ class LLMRouter:
         temperature = params.pop("temperature", config.ai_temperature)
         max_tokens = params.pop("max_tokens", config.ai_max_tokens)
 
-        request_params: Dict[str, Any] = {
+        request_params: dict[str, Any] = {
             "model": model,
             "messages": messages,
             "temperature": temperature,
@@ -107,7 +108,7 @@ class LLMInterface:
         """Request a completion using a simple prompt."""
         return self._router.complete(prompt, **kwargs)
 
-    def chat(self, messages: List[Dict[str, str]], **kwargs: Any) -> str:
+    def chat(self, messages: list[dict[str, str]], **kwargs: Any) -> str:
         """Allow callers to provide fully formed chat messages."""
         return self._router.complete(messages=messages, **kwargs)
 

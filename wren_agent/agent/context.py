@@ -33,10 +33,12 @@ class AgentContext:
 
     def record_error(self, error: dict[str, Any]) -> None:
         """Record an error for history tracking."""
-        self.error_history.append({
-            "iteration": self.iteration_count,
-            "error": error,
-        })
+        self.error_history.append(
+            {
+                "iteration": self.iteration_count,
+                "error": error,
+            }
+        )
 
     def can_iterate(self) -> bool:
         """Check if we can still iterate on fixes."""
@@ -44,7 +46,4 @@ class AgentContext:
 
     def is_valid(self) -> bool:
         """Check if the current script is valid."""
-        return (
-            self.last_test_result is not None
-            and self.last_test_result.get("valid", False)
-        )
+        return self.last_test_result is not None and self.last_test_result.get("valid", False)

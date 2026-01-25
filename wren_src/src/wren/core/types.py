@@ -5,21 +5,24 @@ Provides type inference, dynamic objects, and type conversion utilities.
 Enables automatic type detection from context and type hints.
 """
 
+import builtins
 import inspect
 import json
-from typing import (
-    Any, Type, TypeVar, Optional, Union, Dict, List,
-    get_type_hints, get_args, get_origin
-)
-from datetime import datetime, date, time
-from dataclasses import dataclass, is_dataclass, asdict
-from enum import Enum
 import re
+from dataclasses import is_dataclass
+from datetime import date, datetime
+from typing import (
+    Any,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
-from pydantic import BaseModel, ValidationError, create_model
+from pydantic import BaseModel, create_model
 
-
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class DynamicObject:
@@ -29,18 +32,18 @@ class DynamicObject:
     Includes smart type conversion methods.
     """
 
-    def __init__(self, data: Optional[Dict[str, Any]] = None):
+    def __init__(self, data: dict[str, Any] | None = None):
         self._data = data or {}
 
     def __getattr__(self, name: str) -> Any:
         """Get attribute value."""
-        if name.startswith('_'):
+        if name.startswith("_"):
             return super().__getattribute__(name)
         return self._data.get(name)
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set attribute value."""
-        if name.startswith('_'):
+        if name.startswith("_"):
             super().__setattr__(name, value)
         else:
             self._data[name] = value
@@ -99,14 +102,14 @@ class DynamicObject:
     def date(self) -> date:
         """Convert to date."""
         if isinstance(self._data, dict):
-            if 'date' in self._data:
-                return parse_date(self._data['date'])
-            elif len(self._data) == 1:
+            if "date" in self._data:
+                return parse_date(self._data["date"])
+            if len(self._data) == 1:
                 value = next(iter(self._data.values()))
                 return parse_date(value)
         raise ValueError(f"Cannot convert {self._data} to date")
 
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return self._data.copy()
 
@@ -115,12 +118,12 @@ class DynamicObject:
         return json.dumps(self._data, default=str, **kwargs)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'DynamicObject':
+    def from_dict(cls, data: builtins.dict[str, Any]) -> "DynamicObject":
         """Create from dictionary."""
         return cls(data)
 
     @classmethod
-    def from_json(cls, json_str: str) -> 'DynamicObject':
+    def from_json(cls, json_str: str) -> "DynamicObject":
         """Create from JSON string."""
         return cls(json.loads(json_str))
 
@@ -147,7 +150,7 @@ def parse_date(value: Any) -> date:
         ]
 
         # Handle ordinal dates like "December 25th"
-        value = re.sub(r'(\d+)(st|nd|rd|th)', r'\1', value)
+        value = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", value)
 
         for fmt in formats:
             try:
@@ -158,46 +161,43 @@ def parse_date(value: Any) -> date:
         # Try ISO format as last resort
         try:
             return datetime.fromisoformat(value).date()
-        except:
+        except (ValueError, TypeError):
             pass
 
     raise ValueError(f"Cannot parse date from: {value}")
 
 
-def infer_type(value: Any) -> Type:
+def infer_type(value: Any) -> type:
     """Infer the Python type of a value."""
     if value is None:
         return type(None)
-    elif isinstance(value, bool):
+    if isinstance(value, bool):
         return bool
-    elif isinstance(value, int):
+    if isinstance(value, int):
         return int
-    elif isinstance(value, float):
+    if isinstance(value, float):
         return float
-    elif isinstance(value, str):
+    if isinstance(value, str):
         return str
-    elif isinstance(value, list):
+    if isinstance(value, list):
         return list[Any]
-    elif isinstance(value, dict):
+    if isinstance(value, dict):
         return dict[str, Any]
-    elif isinstance(value, BaseModel):
+    if isinstance(value, BaseModel) or is_dataclass(value):
         return type(value)
-    elif is_dataclass(value):
-        return type(value)
-    else:
-        return type(value)
+    return type(value)
 
 
-def get_return_type(func) -> Optional[Type]:
+def get_return_type(func) -> type | None:
     """Get the return type hint of a function.
 
     Returns None if no type hint is specified.
     """
     hints = get_type_hints(func)
-    return hints.get('return')
+    return hints.get("return")
 
 
-def convert_to_type(value: Any, target_type: Type[T]) -> T:
+def convert_to_type(value: Any, target_type: type[T]) -> T:
     """Convert a value to the target type.
 
     Handles:
@@ -228,7 +228,7 @@ def convert_to_type(value: Any, target_type: Type[T]) -> T:
                 continue
             try:
                 return convert_to_type(value, arg_type)
-            except:
+            except (ValueError, TypeError):
                 continue
         raise ValueError(f"Cannot convert {value} to any type in {target_type}")
 
@@ -251,12 +251,12 @@ def convert_to_type(value: Any, target_type: Type[T]) -> T:
     if isinstance(target_type, type) and issubclass(target_type, BaseModel):
         if isinstance(value, dict):
             return target_type(**value)
-        elif isinstance(value, str):
+        if isinstance(value, str):
             # Try to parse JSON
             try:
                 data = json.loads(value)
                 return target_type(**data)
-            except:
+            except (json.JSONDecodeError, TypeError, ValueError):
                 # Try to create with single field
                 return target_type(value=value)
         elif isinstance(value, DynamicObject):
@@ -268,45 +268,41 @@ def convert_to_type(value: Any, target_type: Type[T]) -> T:
     if is_dataclass(target_type):
         if isinstance(value, dict):
             return target_type(**value)
-        elif isinstance(value, DynamicObject):
+        if isinstance(value, DynamicObject):
             return target_type(**value._data)
-        else:
-            return target_type(value)
+        return target_type(value)
 
     # Handle List
-    if origin is list or origin is List:
+    if origin is list or origin is list:
         args = get_args(target_type)
         if args:
             item_type = args[0]
             if isinstance(value, list):
                 return [convert_to_type(item, item_type) for item in value]
-            else:
-                return [convert_to_type(value, item_type)]
+            return [convert_to_type(value, item_type)]
         return list(value)
 
     # Handle Dict
-    if origin is dict or origin is Dict:
+    if origin is dict or origin is dict:
         if isinstance(value, dict):
             return value
-        elif isinstance(value, DynamicObject):
+        if isinstance(value, DynamicObject):
             return value._data
-        else:
-            return dict(value)
+        return dict(value)
 
     # Handle DynamicObject
     if target_type is DynamicObject:
         if isinstance(value, DynamicObject):
             return value
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             return DynamicObject(value)
-        else:
-            return DynamicObject({'value': value})
+        return DynamicObject({"value": value})
 
     # Default: try direct conversion
     return target_type(value)
 
 
-def create_dynamic_model(name: str, fields: Dict[str, Any]) -> Type[BaseModel]:
+def create_dynamic_model(name: str, fields: dict[str, Any]) -> type[BaseModel]:
     """Create a dynamic Pydantic model with the given fields.
 
     Example:
@@ -319,7 +315,7 @@ def create_dynamic_model(name: str, fields: Dict[str, Any]) -> Type[BaseModel]:
     return create_model(name, **fields)
 
 
-def extract_type_from_assignment() -> Optional[Type]:
+def extract_type_from_assignment() -> type | None:
     """Extract the expected type from variable assignment in the calling frame.
 
     Example:
@@ -333,13 +329,9 @@ def extract_type_from_assignment() -> Optional[Type]:
     # Get the caller's frame (2 levels up)
     caller_frame = frame.f_back.f_back
 
-    # Get local type hints
-    local_vars = caller_frame.f_locals
-    code = caller_frame.f_code
-
     # Try to find type annotations in the frame
-    if hasattr(caller_frame, 'f_locals') and '__annotations__' in caller_frame.f_locals:
-        annotations = caller_frame.f_locals['__annotations__']
+    if hasattr(caller_frame, "f_locals") and "__annotations__" in caller_frame.f_locals:
+        annotations = caller_frame.f_locals["__annotations__"]
 
         # Get the variable being assigned (heuristic: last annotation)
         if annotations:
@@ -353,11 +345,11 @@ def extract_type_from_assignment() -> Optional[Type]:
 class TypedResult:
     """Result wrapper that provides typed access methods."""
 
-    def __init__(self, value: Any, inferred_type: Optional[Type] = None):
+    def __init__(self, value: Any, inferred_type: type | None = None):
         self.value = value
         self.inferred_type = inferred_type or infer_type(value)
 
-    def as_type(self, target_type: Type[T]) -> T:
+    def as_type(self, target_type: type[T]) -> T:
         """Convert to specific type."""
         return convert_to_type(self.value, target_type)
 
@@ -381,9 +373,9 @@ class TypedResult:
         """Convert to date."""
         return convert_to_type(self.value, date)
 
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
-        return convert_to_type(self.value, Dict[str, Any])
+        return convert_to_type(self.value, dict[str, Any])
 
     def __repr__(self) -> str:
         return f"TypedResult(value={self.value!r}, type={self.inferred_type})"

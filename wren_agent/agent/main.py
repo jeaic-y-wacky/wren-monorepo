@@ -5,7 +5,6 @@ Wren Agent CLI - Entry point for running the agent.
 import argparse
 import asyncio
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -21,10 +20,10 @@ if _env_file.exists():
 else:
     load_dotenv()  # Try current directory
 
-from agents import Runner
+from agents import Runner  # noqa: E402
 
-from .core import create_agent
-from .context import AgentContext
+from .context import AgentContext  # noqa: E402
+from .core import create_agent  # noqa: E402
 
 
 def _run_wren_test(script_path: Path) -> dict[str, Any]:
@@ -154,7 +153,8 @@ Examples:
         help="LLM model to use (default: gpt-4o)",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Print verbose output",
     )
@@ -186,7 +186,8 @@ Examples:
                 if result.get("agent_output"):
                     print(f"\nAgent response:\n{result['agent_output']}")
             else:
-                print(f"\n[FAILED] Could not create valid script after {result['iterations']} iterations")
+                iters = result["iterations"]
+                print(f"\n[FAILED] Could not create valid script after {iters} iterations")
                 if result.get("final_result"):
                     print(f"Last error: {result['final_result'].get('message', 'Unknown error')}")
                     if result["final_result"].get("fix_hint"):
@@ -200,6 +201,7 @@ Examples:
         print(f"\n[ERROR] {e}")
         if args.verbose:
             import traceback
+
             traceback.print_exc()
         sys.exit(1)
 

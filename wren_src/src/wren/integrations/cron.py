@@ -19,12 +19,13 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 from ..core.registry import registry
 from . import register_integration
 from .base import BaseIntegration
-from .docs import AuthType, IntegrationDocs, MethodDoc, ParamDoc
+from .docs import IntegrationDocs, MethodDoc, ParamDoc
 
 
 @register_integration("cron")

@@ -5,13 +5,12 @@ Provides educational error messages that teach users how to fix problems.
 Every error includes: what went wrong, what was expected, how to fix it, and examples.
 """
 
-from typing import Optional, Any, Type
+import traceback
+from typing import Any
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
-from rich.markdown import Markdown
-import traceback
-
 
 console = Console(stderr=True)
 
@@ -22,12 +21,12 @@ class WrenError(Exception):
     def __init__(
         self,
         message: str,
-        expected: Optional[str] = None,
-        found: Optional[str] = None,
-        fix: Optional[str] = None,
-        example: Optional[str] = None,
-        docs_url: Optional[str] = None,
-        original_error: Optional[Exception] = None
+        expected: str | None = None,
+        found: str | None = None,
+        fix: str | None = None,
+        example: str | None = None,
+        docs_url: str | None = None,
+        original_error: Exception | None = None,
     ):
         self.message = message
         self.expected = expected
@@ -66,18 +65,18 @@ class WrenError(Exception):
 
     def display(self) -> None:
         """Display the error with rich formatting."""
-        console.print(Panel(
-            self._build_message(),
-            title="[bold red]Wren Error[/bold red]",
-            border_style="red"
-        ))
+        console.print(
+            Panel(
+                self._build_message(), title="[bold red]Wren Error[/bold red]", border_style="red"
+            )
+        )
 
 
 class ConfigurationError(WrenError):
     """Error related to configuration issues."""
 
     @classmethod
-    def missing_api_key(cls, provider: str = "Portkey") -> 'ConfigurationError':
+    def missing_api_key(cls, provider: str = "Portkey") -> "ConfigurationError":
         """Create error for missing API key."""
         return cls(
             message=f"{provider} API key not configured",
@@ -92,11 +91,11 @@ export PORTKEY_VIRTUAL_KEY="your-virtual-key"
 
 # Or in .env file:
 echo 'PORTKEY_API_KEY=your-api-key' >> .env""",
-            docs_url="https://docs.portkey.ai/docs/api-reference/authentication"
+            docs_url="https://docs.portkey.ai/docs/api-reference/authentication",
         )
 
     @classmethod
-    def invalid_config(cls, key: str, value: Any, expected_type: Type) -> 'ConfigurationError':
+    def invalid_config(cls, key: str, value: Any, expected_type: type) -> "ConfigurationError":
         """Create error for invalid configuration value."""
         return cls(
             message=f"Invalid configuration value for {key}",
@@ -105,7 +104,7 @@ echo 'PORTKEY_API_KEY=your-api-key' >> .env""",
             fix=f"Provide a valid {expected_type.__name__} value",
             example=f"""# Set correct value type
 export WREN_{key.upper()}=<valid_{expected_type.__name__}_value>""",
-            docs_url=f"https://docs.wren.ai/configuration#{key}"
+            docs_url=f"https://docs.wren.ai/configuration#{key}",
         )
 
 
@@ -113,7 +112,7 @@ class AIProviderError(WrenError):
     """Error related to AI provider issues."""
 
     @classmethod
-    def api_error(cls, provider: str, error: Exception) -> 'AIProviderError':
+    def api_error(cls, provider: str, error: Exception) -> "AIProviderError":
         """Create error for AI API issues."""
         return cls(
             message=f"{provider} API error occurred",
@@ -131,11 +130,11 @@ requests.get('https://api.openai.com')  # Should succeed
 import time
 time.sleep(1)  # Add delay between requests""",
             docs_url=f"https://docs.wren.ai/providers/{provider.lower()}",
-            original_error=error
+            original_error=error,
         )
 
     @classmethod
-    def model_not_found(cls, model: str, provider: str) -> 'AIProviderError':
+    def model_not_found(cls, model: str, provider: str) -> "AIProviderError":
         """Create error for unknown model."""
         return cls(
             message=f"Model '{model}' not found for {provider}",
@@ -150,14 +149,15 @@ time.sleep(1)  # Add delay between requests""",
 
 # Set model:
 export WREN_MODEL="gpt-4-turbo-preview" """,
-            docs_url=f"https://docs.wren.ai/models"
+            docs_url="https://docs.wren.ai/models",
         )
+
 
 class TypeInferenceError(WrenError):
     """Error related to type inference issues."""
 
     @classmethod
-    def cannot_convert(cls, value: Any, target_type: Type) -> 'TypeInferenceError':
+    def cannot_convert(cls, value: Any, target_type: type) -> "TypeInferenceError":
         """Create error for type conversion failure."""
         value_repr = repr(value)[:100] + "..." if len(repr(value)) > 100 else repr(value)
 
@@ -166,7 +166,7 @@ class TypeInferenceError(WrenError):
             expected=f"Value convertible to {target_type.__name__}",
             found=f"Value: {value_repr} (type: {type(value).__name__})",
             fix=f"Ensure the value can be converted to {target_type.__name__}",
-            example=f"""# For Pydantic models:
+            example="""# For Pydantic models:
 from pydantic import BaseModel
 from datetime import date
 
@@ -175,13 +175,13 @@ class Booking(BaseModel):
     date: date
 
 # Provide compatible data:
-data = {{"name": "John", "date": "2024-12-25"}}
+data = {"name": "John", "date": "2024-12-25"}
 booking: Booking = wren.ai.extract(data)""",
-            docs_url="https://docs.wren.ai/types"
+            docs_url="https://docs.wren.ai/types",
         )
 
     @classmethod
-    def no_type_hint(cls, context: str) -> 'TypeInferenceError':
+    def no_type_hint(cls, context: str) -> "TypeInferenceError":
         """Create error for missing type hint."""
         return cls(
             message="Cannot infer type without type hint",
@@ -201,7 +201,7 @@ items: List[Item] = wren.ai.extract(text)
 
 # Or use explicit type parameter:
 items = wren.ai.extract(text, List[Item])""",
-            docs_url="https://docs.wren.ai/type-inference"
+            docs_url="https://docs.wren.ai/type-inference",
         )
 
 
@@ -209,7 +209,7 @@ class ContextError(WrenError):
     """Error related to context management."""
 
     @classmethod
-    def missing_context(cls, key: str) -> 'ContextError':
+    def missing_context(cls, key: str) -> "ContextError":
         """Create error for missing context value."""
         return cls(
             message=f"Context key '{key}' not found",
@@ -232,7 +232,7 @@ with context.scope({key}=value):
 def handler(email):
     # email automatically in context
     pass""",
-            docs_url="https://docs.wren.ai/context"
+            docs_url="https://docs.wren.ai/context",
         )
 
 
@@ -259,20 +259,18 @@ wren.config.verbose = True  # Show detailed output
 
 # Then retry your operation""",
             docs_url="https://docs.wren.ai/debugging",
-            original_error=error
+            original_error=error,
         )
         wrapped.display()
 
         # In debug mode, also show the traceback
         from .config import get_config
+
         if get_config().debug:
             console.print("\n[dim]Full traceback:[/dim]")
-            console.print(Syntax(
-                traceback.format_exc(),
-                "python",
-                theme="monokai",
-                line_numbers=True
-            ))
+            console.print(
+                Syntax(traceback.format_exc(), "python", theme="monokai", line_numbers=True)
+            )
 
 
 def assert_config_valid(config) -> None:
@@ -281,10 +279,11 @@ def assert_config_valid(config) -> None:
         raise ConfigurationError.missing_api_key()
 
 
-def safe_import(module_name: str, package_name: Optional[str] = None) -> Any:
+def safe_import(module_name: str, package_name: str | None = None) -> Any:
     """Safely import a module with educational error if missing."""
     try:
         import importlib
+
         return importlib.import_module(module_name)
     except ImportError as e:
         package = package_name or module_name
@@ -292,7 +291,7 @@ def safe_import(module_name: str, package_name: Optional[str] = None) -> Any:
             message=f"Required package '{package}' is not installed",
             expected=f"Package '{package}' to be available",
             found="Package not found in environment",
-            fix=f"Install the required package",
+            fix="Install the required package",
             example=f"""# Install with pip:
 pip install {package}
 
@@ -301,6 +300,6 @@ uv pip install {package}
 
 # For Wren with extras:
 pip install wren[integrations]""",
-            docs_url=f"https://docs.wren.ai/installation",
-            original_error=e
+            docs_url="https://docs.wren.ai/installation",
+            original_error=e,
         )

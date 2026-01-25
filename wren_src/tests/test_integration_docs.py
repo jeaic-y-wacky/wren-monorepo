@@ -1,7 +1,5 @@
 """Tests for the integration documentation system."""
 
-import pytest
-
 from wren.integrations import (
     get_integration_docs,
     integrations,

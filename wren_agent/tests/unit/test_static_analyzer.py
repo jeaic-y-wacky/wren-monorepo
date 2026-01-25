@@ -6,8 +6,8 @@ Run with: uv run pytest tests/unit/test_static_analyzer.py -v
 
 import pytest
 
-from agent.tools.wren_validator import WrenAPIValidator, ValidationIssue
-from agent.tools.static_analyzer import StaticAnalyzer, AnalysisResult
+from agent.tools.static_analyzer import AnalysisResult, StaticAnalyzer
+from agent.tools.wren_validator import ValidationIssue, WrenAPIValidator
 
 
 # Module-scoped fixtures - created once, reused across all tests
@@ -254,8 +254,9 @@ class TestWriteScriptIntegration:
     @pytest.mark.asyncio
     async def test_blocks_dangerous_import_os(self, mock_ctx, tmp_path):
         """Dangerous import os is blocked, file not written."""
-        from agent.tools.write_script import write_wren_script
         import json
+
+        from agent.tools.write_script import write_wren_script
 
         code = """
 import os
@@ -277,8 +278,9 @@ os.system("whoami")
     @pytest.mark.asyncio
     async def test_blocks_eval(self, mock_ctx, tmp_path):
         """eval() is blocked, file not written."""
-        from agent.tools.write_script import write_wren_script
         import json
+
+        from agent.tools.write_script import write_wren_script
 
         code = """
 user_input = "1 + 1"
@@ -296,8 +298,9 @@ result = eval(user_input)
     @pytest.mark.asyncio
     async def test_blocks_file_write(self, mock_ctx, tmp_path):
         """File write operations are blocked."""
-        from agent.tools.write_script import write_wren_script
         import json
+
+        from agent.tools.write_script import write_wren_script
 
         code = """
 with open("data.txt", "w") as f:
@@ -315,8 +318,9 @@ with open("data.txt", "w") as f:
     @pytest.mark.asyncio
     async def test_blocks_subprocess(self, mock_ctx, tmp_path):
         """subprocess import is blocked."""
-        from agent.tools.write_script import write_wren_script
         import json
+
+        from agent.tools.write_script import write_wren_script
 
         code = """
 import subprocess
@@ -333,8 +337,9 @@ subprocess.run(["ls", "-la"])
     @pytest.mark.asyncio
     async def test_allows_safe_wren_script(self, mock_ctx, tmp_path):
         """Safe Wren script is written successfully."""
-        from agent.tools.write_script import write_wren_script
         import json
+
+        from agent.tools.write_script import write_wren_script
 
         code = """
 import wren
@@ -367,8 +372,9 @@ def handle_order(email):
     @pytest.mark.asyncio
     async def test_allows_with_warnings(self, mock_ctx, tmp_path):
         """Code with warnings is written, warnings returned."""
-        from agent.tools.write_script import write_wren_script
         import json
+
+        from agent.tools.write_script import write_wren_script
 
         # Missing type in extract - should warn but still write
         code = """
@@ -393,8 +399,9 @@ def daily():
     @pytest.mark.asyncio
     async def test_context_updated_on_success(self, mock_ctx, tmp_path):
         """Context is updated after successful write."""
-        from agent.tools.write_script import write_wren_script
         import json
+
+        from agent.tools.write_script import write_wren_script
 
         code = """
 import wren
@@ -414,8 +421,9 @@ def job():
     @pytest.mark.asyncio
     async def test_context_updated_on_block(self, mock_ctx, tmp_path):
         """Context stores error result when blocked."""
-        from agent.tools.write_script import write_wren_script
         import json
+
+        from agent.tools.write_script import write_wren_script
 
         code = "import os"
         await write_wren_script.on_invoke_tool(
@@ -429,8 +437,9 @@ def job():
     @pytest.mark.asyncio
     async def test_filename_sanitization(self, mock_ctx, tmp_path):
         """Path traversal in filename is blocked."""
-        from agent.tools.write_script import write_wren_script
         import json
+
+        from agent.tools.write_script import write_wren_script
 
         code = """
 import wren
@@ -452,8 +461,9 @@ def tick():
     @pytest.mark.asyncio
     async def test_adds_py_extension(self, mock_ctx, tmp_path):
         """Filename without .py gets extension added."""
-        from agent.tools.write_script import write_wren_script
         import json
+
+        from agent.tools.write_script import write_wren_script
 
         code = """
 import wren

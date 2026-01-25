@@ -25,42 +25,44 @@ __version__ = "0.1.0"
 __author__ = "Jeaic"
 
 # Import from subpackages
-from .ai import ai
-from .ai import llm
-from .core import context, with_context, get_request_id
-from .core import config, get_config, reload_config
-from .core import registry, get_metadata
+from .ai import ai, llm
+from .core import (
+    config,
+    context,
+    get_config,
+    get_metadata,
+    get_request_id,
+    registry,
+    reload_config,
+    with_context,
+)
 from .errors import WrenError, handle_error
-from .triggers import on_schedule, on_email
 from .integrations import integrations
+from .triggers import on_email, on_schedule
 
 # Public API exports
 __all__ = [
     # Main interfaces
-    'ai',
-    'context',
-    'config',
-    'llm',
-
+    "ai",
+    "context",
+    "config",
+    "llm",
     # Prompting approach (event system)
-    'registry',
-    'get_metadata',
-    'on_schedule',
-    'on_email',
-    'integrations',
-
+    "registry",
+    "get_metadata",
+    "on_schedule",
+    "on_email",
+    "integrations",
     # Functions
-    'get_config',
-    'reload_config',
-    'with_context',
-    'get_request_id',
-    'handle_error',
-
+    "get_config",
+    "reload_config",
+    "with_context",
+    "get_request_id",
+    "handle_error",
     # Types
-    'WrenError',
-
+    "WrenError",
     # Version info
-    '__version__',
+    "__version__",
 ]
 
 

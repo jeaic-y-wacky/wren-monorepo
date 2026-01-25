@@ -22,8 +22,8 @@ Example:
     result = await Runner.run(agent, "Create a Slack notifier", context=context)
 """
 
-from .core import create_agent
 from .context import AgentContext
+from .core import create_agent
 from .main import run_agent
 
 __version__ = "0.1.0"

@@ -19,14 +19,16 @@ Usage:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
 class TriggerEntry:
     """A registered trigger (schedule, email, webhook, etc.)."""
-    type: str              # "schedule", "email", "webhook", etc.
+
+    type: str  # "schedule", "email", "webhook", etc.
     func_name: str
     func: Callable
     config: dict[str, Any]  # type-specific configuration

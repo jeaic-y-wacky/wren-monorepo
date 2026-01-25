@@ -5,11 +5,11 @@ Auto-discovers configuration from environment variables.
 Zero configuration required - everything has smart defaults.
 """
 
+import logging
 import os
-from typing import Optional, Dict, Any
 from dataclasses import dataclass, field
 from pathlib import Path
-import logging
+from typing import Any
 
 # Load environment variables from .env file if it exists
 from dotenv import find_dotenv, load_dotenv
@@ -32,12 +32,12 @@ class WrenConfig:
     """
 
     # AI Provider Settings (OpenAI)
-    openai_api_key: Optional[str] = field(default=None)
+    openai_api_key: str | None = field(default=None)
     default_model: str = field(default="gpt-4o-mini")
 
     # Behavior Settings
     ai_temperature: float = field(default=0.7)
-    ai_max_tokens: Optional[int] = field(default=None)
+    ai_max_tokens: int | None = field(default=None)
     ai_timeout: int = field(default=30)  # seconds
     ai_max_retries: int = field(default=3)
 
@@ -53,8 +53,8 @@ class WrenConfig:
     cache_ttl: int = field(default=3600)  # seconds
 
     # Platform Settings
-    platform_url: Optional[str] = field(default=None)
-    platform_api_key: Optional[str] = field(default=None)
+    platform_url: str | None = field(default=None)
+    platform_api_key: str | None = field(default=None)
 
     # Development Settings
     debug: bool = field(default=False)
@@ -68,11 +68,9 @@ class WrenConfig:
 
         # Validate OpenAI API key
         if not self.openai_api_key:
-            logger.warning(
-                "OpenAI API key not found. Set OPENAI_API_KEY environment variable."
-            )
+            logger.warning("OpenAI API key not found. Set OPENAI_API_KEY environment variable.")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary for serialization."""
         result = {}
         for key, value in self.__dict__.items():
@@ -103,28 +101,23 @@ def load_config() -> WrenConfig:
         # OpenAI API Keys
         "openai_api_key": ["OPENAI_API_KEY", "WREN_OPENAI_API_KEY"],
         "default_model": ["WREN_MODEL", "WREN_DEFAULT_MODEL"],
-
         # Behavior settings
         "ai_temperature": ["WREN_AI_TEMPERATURE", "WREN_TEMPERATURE"],
         "ai_max_tokens": ["WREN_AI_MAX_TOKENS", "WREN_MAX_TOKENS"],
         "ai_timeout": ["WREN_AI_TIMEOUT", "WREN_TIMEOUT"],
         "ai_max_retries": ["WREN_AI_MAX_RETRIES", "WREN_MAX_RETRIES"],
-
         # RAG settings
         "rag_chunk_size": ["WREN_RAG_CHUNK_SIZE"],
         "rag_chunk_overlap": ["WREN_RAG_CHUNK_OVERLAP"],
         "rag_top_k": ["WREN_RAG_TOP_K"],
         "rag_min_confidence": ["WREN_RAG_MIN_CONFIDENCE"],
-
         # Storage settings
         "data_dir": ["WREN_DATA_DIR"],
         "cache_enabled": ["WREN_CACHE_ENABLED"],
         "cache_ttl": ["WREN_CACHE_TTL"],
-
         # Platform settings
         "platform_url": ["WREN_PLATFORM_URL"],
         "platform_api_key": ["WREN_PLATFORM_API_KEY"],
-
         # Development settings
         "debug": ["WREN_DEBUG", "DEBUG"],
         "verbose": ["WREN_VERBOSE", "VERBOSE"],
@@ -139,9 +132,15 @@ def load_config() -> WrenConfig:
                 # Type conversion based on field
                 if config_key in ["ai_temperature", "rag_min_confidence"]:
                     config_values[config_key] = float(value)
-                elif config_key in ["ai_max_tokens", "ai_timeout", "ai_max_retries",
-                                   "rag_chunk_size", "rag_chunk_overlap", "rag_top_k",
-                                   "cache_ttl"]:
+                elif config_key in [
+                    "ai_max_tokens",
+                    "ai_timeout",
+                    "ai_max_retries",
+                    "rag_chunk_size",
+                    "rag_chunk_overlap",
+                    "rag_top_k",
+                    "cache_ttl",
+                ]:
                     config_values[config_key] = int(value) if value else None
                 elif config_key in ["cache_enabled", "debug", "verbose", "show_prompts"]:
                     config_values[config_key] = value.lower() in ["true", "1", "yes", "on"]
@@ -155,7 +154,7 @@ def load_config() -> WrenConfig:
 
 
 # Global config instance
-_config: Optional[WrenConfig] = None
+_config: WrenConfig | None = None
 
 
 def get_config() -> WrenConfig:

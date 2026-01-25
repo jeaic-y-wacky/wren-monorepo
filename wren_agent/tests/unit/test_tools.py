@@ -5,15 +5,17 @@ Run with: uv run pytest tests/unit/
 """
 
 import json
-import pytest
 from pathlib import Path
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from agent.context import AgentContext
 
 
 class MockRunContextWrapper:
     """Mock for RunContextWrapper that doesn't require the agents library."""
+
     def __init__(self, context: AgentContext):
         self.context = context
 
@@ -51,8 +53,7 @@ class TestWriteScript:
 
         code = "import wren\nprint('hello')"
         result = await write_wren_script.on_invoke_tool(
-            mock_ctx,
-            json.dumps({"filename": "test.py", "code": code})
+            mock_ctx, json.dumps({"filename": "test.py", "code": code})
         )
 
         script_path = temp_workspace / "test.py"
@@ -66,8 +67,7 @@ class TestWriteScript:
         from agent.tools.write_script import write_wren_script
 
         await write_wren_script.on_invoke_tool(
-            mock_ctx,
-            json.dumps({"filename": "test", "code": "# code"})
+            mock_ctx, json.dumps({"filename": "test", "code": "# code"})
         )
 
         assert (temp_workspace / "test.py").exists()
@@ -79,8 +79,7 @@ class TestWriteScript:
 
         code = "import wren"
         await write_wren_script.on_invoke_tool(
-            mock_ctx,
-            json.dumps({"filename": "test.py", "code": code})
+            mock_ctx, json.dumps({"filename": "test.py", "code": code})
         )
 
         assert mock_ctx.context.script_path is not None
@@ -92,8 +91,7 @@ class TestWriteScript:
         from agent.tools.write_script import write_wren_script
 
         await write_wren_script.on_invoke_tool(
-            mock_ctx,
-            json.dumps({"filename": "../../../etc/passwd.py", "code": "# evil"})
+            mock_ctx, json.dumps({"filename": "../../../etc/passwd.py", "code": "# evil"})
         )
 
         # Should only create passwd.py in workspace, not traverse
@@ -165,12 +163,14 @@ class TestTestScript:
         mock_ctx.context.script_path = script
 
         mock_result = MagicMock()
-        mock_result.stdout = json.dumps({
-            "valid": False,
-            "error_type": "AgentFixableError",
-            "error_code": "SYNTAX_ERROR",
-            "message": "Invalid syntax",
-        })
+        mock_result.stdout = json.dumps(
+            {
+                "valid": False,
+                "error_type": "AgentFixableError",
+                "error_code": "SYNTAX_ERROR",
+                "message": "Invalid syntax",
+            }
+        )
 
         with patch("subprocess.run", return_value=mock_result):
             await test_wren_script.on_invoke_tool(mock_ctx, "{}")

@@ -117,9 +117,7 @@ class StaticAnalyzer:
             return []
 
         # Write code to temp file for semgrep
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write(code)
             tmp_path = tmp.name
 

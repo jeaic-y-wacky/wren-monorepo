@@ -217,7 +217,7 @@ class WrenAPIValidator:
                             severity="MEDIUM",
                             error_code="INTEGRATION_IN_FUNCTION",
                             message="Integration initialized inside function",
-                            fix_hint="Move integration init() to module level (after imports, before functions).",
+                            fix_hint="Move integration init() to module level.",
                             line=child.lineno,
                             col=child.col_offset,
                         )
@@ -239,9 +239,7 @@ class WrenAPIValidator:
                 continue
 
             # Check if type is provided (2nd arg or target_type kwarg)
-            has_type = len(node.args) >= 2 or any(
-                kw.arg == "target_type" for kw in node.keywords
-            )
+            has_type = len(node.args) >= 2 or any(kw.arg == "target_type" for kw in node.keywords)
 
             if not has_type:
                 issues.append(

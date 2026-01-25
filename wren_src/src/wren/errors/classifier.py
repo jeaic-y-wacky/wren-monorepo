@@ -293,7 +293,18 @@ def classify_exception(exc: Exception) -> ClassifiedError:
 
     # Check for common credential/config errors that need user action
     msg = str(exc).lower()
-    if any(kw in msg for kw in ["api key", "credentials", "oauth", "authentication", "unauthorized", "403", "401"]):
+    if any(
+        kw in msg
+        for kw in [
+            "api key",
+            "credentials",
+            "oauth",
+            "authentication",
+            "unauthorized",
+            "403",
+            "401",
+        ]
+    ):
         return ClassifiedError(
             error_type="UserFacingConfigError",
             error_code="AUTH_ERROR",

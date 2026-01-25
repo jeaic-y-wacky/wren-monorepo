@@ -18,8 +18,8 @@ Usage:
 
 from __future__ import annotations
 
-from functools import wraps
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from ..core.registry import registry
 
@@ -46,17 +46,16 @@ def on_schedule(cron: str, timezone: str | None = None) -> Callable[[F], F]:
         def every_15_minutes():
             check_for_updates()
     """
+
     def decorator(func: F) -> F:
         config = {"cron": cron, "timezone": timezone}
         registry.register_trigger("schedule", config, func)
         return func
+
     return decorator
 
 
-def on_email(
-    filter: dict[str, Any] | None = None,
-    **filter_kwargs: Any
-) -> Callable[[F], F]:
+def on_email(filter: dict[str, Any] | None = None, **filter_kwargs: Any) -> Callable[[F], F]:
     """
     Decorator to register a function for email-triggered execution.
 
@@ -92,4 +91,5 @@ def on_email(
         config = {"filter": filter_config}
         registry.register_trigger("email", config, func)
         return func
+
     return decorator

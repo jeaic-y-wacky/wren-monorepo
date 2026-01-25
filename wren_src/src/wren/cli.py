@@ -20,8 +20,8 @@ from urllib.request import Request, urlopen
 
 import wren
 
-from .errors.classifier import format_error_for_agent
 from .core.runtime import import_script
+from .errors.classifier import format_error_for_agent
 
 
 def _load_script_metadata(script_path: str) -> dict[str, Any]:
@@ -273,7 +273,7 @@ def print_validation_result(result: dict[str, Any], script_path: str) -> None:
         for s in schedules:
             config = s["config"]
             tz = f"  ({config['timezone']})" if config.get("timezone") else ""
-            print(f"  \u2022 {s['func']:<20} \"{config['cron']}\"{tz}")
+            print(f'  \u2022 {s["func"]:<20} "{config["cron"]}"{tz}')
     else:
         print("Schedules: none")
     print()
@@ -291,7 +291,7 @@ def print_validation_result(result: dict[str, Any], script_path: str) -> None:
     print()
 
     # Other trigger types
-    other_types = [t for t in triggers_by_type.keys() if t not in ("schedule", "email")]
+    other_types = [t for t in triggers_by_type if t not in ("schedule", "email")]
     for trigger_type in other_types:
         type_triggers = triggers_by_type[trigger_type]
         print(f"{trigger_type.title()} Triggers ({len(type_triggers)}):")

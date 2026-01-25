@@ -46,7 +46,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.13"]  # Test min and max supported versions
 
     steps:
       - uses: actions/checkout@v4
@@ -69,8 +69,8 @@ jobs:
       - name: Run linting
         run: |
           cd wren_src
-          uv run ruff check src tests
-          uv run black --check src tests
+          uv run ruff check --fix src tests
+          uv run ruff format --check src tests
 
       - name: Run type checking
         run: |
@@ -119,7 +119,8 @@ jobs:
       - name: Run linting
         run: |
           cd wren_agent
-          uv run ruff check agent tests
+          uv run ruff check --fix agent tests
+          uv run ruff format --check agent tests
 
       - name: Run unit tests with coverage
         run: |

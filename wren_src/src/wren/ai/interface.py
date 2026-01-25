@@ -6,19 +6,18 @@ Uses Portkey as the unified gateway to all AI providers.
 """
 
 import json
-import re
-from typing import Any, Optional, Type, TypeVar, List
 import logging
+import re
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
 from ..core.context import context
 from ..core.types import convert_to_type, extract_type_from_assignment
-from ..errors.base import ConfigurationError, AIProviderError, TypeInferenceError
+from ..errors.base import AIProviderError, ConfigurationError, TypeInferenceError
 from .llm import llm_router
 
-
-T = TypeVar('T')
+T = TypeVar("T")
 logger = logging.getLogger(__name__)
 
 
@@ -48,7 +47,7 @@ class AI:
         except Exception as e:
             raise AIProviderError.api_error("Portkey", e)
 
-    def __call__(self, prompt: str, text: Optional[str] = None, **kwargs) -> Any:
+    def __call__(self, prompt: str, text: str | None = None, **kwargs) -> Any:
         """Main AI interface - callable with automatic type inference.
 
         Args:
@@ -64,17 +63,28 @@ class AI:
                 escalate()
         """
         # Build full prompt
-        if text:
-            full_prompt = f"{prompt}\n\nText:\n{text}"
-        else:
-            full_prompt = prompt
+        full_prompt = f"{prompt}\n\nText:\n{text}" if text else prompt
 
         # For boolean questions, be explicit about wanting yes/no
         prompt_lower = prompt.lower()
-        if any(word in prompt_lower for word in [
-            'is', 'are', 'does', 'do', 'can', 'should', 'will', 'would',
-            'has', 'have'
-        ]) and '?' in prompt:
+        if (
+            any(
+                word in prompt_lower
+                for word in [
+                    "is",
+                    "are",
+                    "does",
+                    "do",
+                    "can",
+                    "should",
+                    "will",
+                    "would",
+                    "has",
+                    "have",
+                ]
+            )
+            and "?" in prompt
+        ):
             full_prompt += "\n\nAnswer with only 'Yes' or 'No'."
 
         # Add context if available
@@ -93,32 +103,44 @@ class AI:
         prompt_lower = prompt.lower()
 
         # Boolean questions - check for yes/no anywhere in response
-        if any(word in prompt_lower for word in [
-            'is', 'are', 'does', 'do', 'can', 'should', 'will', 'would',
-            'has', 'have', '?'
-        ]):
+        if any(
+            word in prompt_lower
+            for word in [
+                "is",
+                "are",
+                "does",
+                "do",
+                "can",
+                "should",
+                "will",
+                "would",
+                "has",
+                "have",
+                "?",
+            ]
+        ):
             response_lower = response.lower().strip()
             # Check exact match first
-            if response_lower in ['yes', 'true', '1', 'correct', 'affirmative']:
+            if response_lower in ["yes", "true", "1", "correct", "affirmative"]:
                 return True
-            elif response_lower in ['no', 'false', '0', 'incorrect', 'negative']:
+            if response_lower in ["no", "false", "0", "incorrect", "negative"]:
                 return False
             # Check if response starts with yes/no
-            elif response_lower.startswith('yes') or response_lower.startswith('**yes'):
+            if response_lower.startswith("yes") or response_lower.startswith("**yes"):
                 return True
-            elif response_lower.startswith('no') or response_lower.startswith('**no'):
+            if response_lower.startswith("no") or response_lower.startswith("**no"):
                 return False
 
         # Try to parse as JSON
         try:
             return json.loads(response)
-        except:
+        except (json.JSONDecodeError, ValueError):
             pass
 
         # Return as string by default
         return response.strip()
 
-    def extract(self, text: str, target_type: Optional[Type[T]] = None, **kwargs) -> T:
+    def extract(self, text: str, target_type: type[T] | None = None, **kwargs) -> T:
         """Extract structured data from text.
 
         Args:
@@ -143,7 +165,7 @@ class AI:
                 message="No target type specified for extraction",
                 expected="Type hint on assignment or explicit target_type parameter",
                 fix="Add a type hint: `result: MyModel = wren.ai.extract(text)` "
-                    "or pass target_type: `wren.ai.extract(text, MyModel)`"
+                "or pass target_type: `wren.ai.extract(text, MyModel)`",
             )
 
         # Build extraction prompt
@@ -160,7 +182,7 @@ Text:
 
 Return only valid JSON that matches the schema."""
 
-        elif hasattr(target_type, '__annotations__'):
+        elif hasattr(target_type, "__annotations__"):
             # Dataclass or similar
             fields = target_type.__annotations__
             prompt = f"""Extract the following fields from the text and return as JSON:
@@ -178,7 +200,7 @@ Return only valid JSON with the specified fields."""
             raise TypeInferenceError(
                 message=f"Cannot extract to type {target_type}",
                 expected="Pydantic BaseModel or dataclass with type annotations",
-                fix="Define a Pydantic model or dataclass for extraction"
+                fix="Define a Pydantic model or dataclass for extraction",
             )
 
         # Get completion
@@ -189,7 +211,7 @@ Return only valid JSON with the specified fields."""
             data = json.loads(response)
         except json.JSONDecodeError:
             # Try to extract JSON from response
-            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+            json_match = re.search(r"\{.*\}", response, re.DOTALL)
             if json_match:
                 data = json.loads(json_match.group())
             else:
@@ -197,16 +219,16 @@ Return only valid JSON with the specified fields."""
                     message="Failed to parse AI response as JSON",
                     expected="Valid JSON response",
                     found=response[:100] + "...",
-                    fix="The AI model didn't return valid JSON"
+                    fix="The AI model didn't return valid JSON",
                 )
 
         # Convert to target type
         try:
             return convert_to_type(data, target_type)
-        except Exception as e:
+        except Exception:
             raise TypeInferenceError.cannot_convert(data, target_type)
 
-    def classify(self, text: str, categories: List[str], **kwargs) -> str:
+    def classify(self, text: str, categories: list[str], **kwargs) -> str:
         """Classify text into one of the given categories.
 
         Args:
@@ -220,7 +242,7 @@ Return only valid JSON with the specified fields."""
         Example:
             category = wren.ai.classify(email, ["urgent", "normal", "spam"])
         """
-        prompt = f"""Classify the following text into one of these categories: {', '.join(categories)}
+        prompt = f"""Classify the following text into one of these categories: {", ".join(categories)}
 
 Text:
 {text}
@@ -263,7 +285,7 @@ Return only the category name, nothing else."""
         """
         return self.classify(text, ["positive", "negative", "neutral"], **kwargs)
 
-    def summarize(self, text: str, max_length: Optional[int] = None, **kwargs) -> str:
+    def summarize(self, text: str, max_length: int | None = None, **kwargs) -> str:
         """Summarize text.
 
         Args:
@@ -277,7 +299,7 @@ Return only the category name, nothing else."""
         Example:
             summary = wren.ai.summarize(article, max_length=100)
         """
-        prompt = f"Summarize the following text"
+        prompt = "Summarize the following text"
         if max_length:
             prompt += f" in no more than {max_length} characters"
         prompt += f":\n\n{text}"
@@ -301,59 +323,59 @@ Return only the category name, nothing else."""
         prompt = f"Translate the following text to {target_language}:\n\n{text}"
         return self._complete(prompt, **kwargs)
 
-    # Simple type conversion methods
-    def bool(self, text: str, **kwargs) -> bool:
-        """Convert text to boolean.
+    # Simple type extraction methods
+    def extract_bool(self, text: str, **kwargs) -> bool:
+        """Extract boolean from text.
 
         Example:
-            if wren.ai.bool("Is the sky blue?"):
+            if wren.ai.extract_bool("Is the sky blue?"):
                 print("Yes!")
         """
         response = self(text, **kwargs)
         if isinstance(response, bool):
             return response
-        return str(response).lower() in ['yes', 'true', '1']
+        return str(response).lower() in ["yes", "true", "1"]
 
-    def int(self, prompt: str, text: Optional[str] = None, **kwargs) -> int:
+    def extract_int(self, prompt: str, text: str | None = None, **kwargs) -> int:
         """Extract integer from text.
 
         Example:
-            count = wren.ai.int("How many items?", order_text)
+            count = wren.ai.extract_int("How many items?", order_text)
         """
         response = self(prompt, text, **kwargs)
         # Extract first number from response
-        numbers = re.findall(r'\d+', str(response))
+        numbers = re.findall(r"\d+", str(response))
         if numbers:
             return int(numbers[0])
         raise ValueError(f"No integer found in response: {response}")
 
-    def float(self, prompt: str, text: Optional[str] = None, **kwargs) -> float:
+    def extract_float(self, prompt: str, text: str | None = None, **kwargs) -> float:
         """Extract float from text.
 
         Example:
-            price = wren.ai.float("What's the total price?", invoice)
+            price = wren.ai.extract_float("What's the total price?", invoice)
         """
         response = self(prompt, text, **kwargs)
         # Extract first float from response
-        numbers = re.findall(r'\d+\.?\d*', str(response))
+        numbers = re.findall(r"\d+\.?\d*", str(response))
         if numbers:
             return float(numbers[0])
         raise ValueError(f"No float found in response: {response}")
 
-    def str(self, prompt: str, text: Optional[str] = None, **kwargs) -> str:
-        """Get string response.
+    def extract_str(self, prompt: str, text: str | None = None, **kwargs) -> str:
+        """Extract string response.
 
         Example:
-            name = wren.ai.str("What's the customer name?", email)
+            name = wren.ai.extract_str("What's the customer name?", email)
         """
         response = self(prompt, text, **kwargs)
         return str(response)
 
-    def date(self, prompt: str, text: Optional[str] = None, **kwargs):
+    def extract_date(self, prompt: str, text: str | None = None, **kwargs):
         """Extract date from text.
 
         Example:
-            meeting_date = wren.ai.date("When is the meeting?", email)
+            meeting_date = wren.ai.extract_date("When is the meeting?", email)
         """
         from ..core.types import parse_date
 

@@ -10,8 +10,6 @@ Run with:
 """
 
 import asyncio
-import json
-from pathlib import Path
 
 from agent import run_agent
 
@@ -47,9 +45,9 @@ TEST_CASES = [
 
 async def run_test(name: str, request: str, expected: dict) -> dict:
     """Run a single test case."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TEST: {name}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Request: {request}")
     print()
 
@@ -90,9 +88,9 @@ async def run_test(name: str, request: str, expected: dict) -> dict:
 
 async def run_all_tests():
     """Run all test cases."""
-    print("="*60)
+    print("=" * 60)
     print("WREN AGENT TEST SUITE")
-    print("="*60)
+    print("=" * 60)
 
     results = []
     for name, request, expected in TEST_CASES:
@@ -104,9 +102,9 @@ async def run_all_tests():
             results.append({"name": name, "passed": False, "error": str(e)})
 
     # Summary
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("SUMMARY")
-    print("="*60)
+    print("=" * 60)
 
     passed = sum(1 for r in results if r["passed"])
     total = len(results)

@@ -1,6 +1,7 @@
 """Script executor using subprocess for basic isolation."""
 
 import asyncio
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,9 +27,9 @@ class ExecutionResult:
 class Executor:
     """Execute scripts in isolated subprocess."""
 
-    def __init__(self, timeout_seconds: int = 300, python_path: str = "python"):
+    def __init__(self, timeout_seconds: int = 300, python_path: str | None = None):
         self.timeout_seconds = timeout_seconds
-        self.python_path = python_path
+        self.python_path = python_path or sys.executable
 
     async def execute(
         self,

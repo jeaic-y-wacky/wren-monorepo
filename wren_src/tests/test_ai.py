@@ -5,9 +5,10 @@ Tests the AI interface, particularly the extract() method which now
 requires explicit types (no more silent fallback to DynamicObject).
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
 from dataclasses import dataclass
+from unittest.mock import patch
+
+import pytest
 from pydantic import BaseModel
 
 from wren.ai import AI, ai
@@ -16,6 +17,7 @@ from wren.errors import TypeInferenceError
 
 class BookingModel(BaseModel):
     """Test Pydantic model."""
+
     name: str
     guests: int
 
@@ -23,6 +25,7 @@ class BookingModel(BaseModel):
 @dataclass
 class BookingDataclass:
     """Test dataclass."""
+
     name: str
     guests: int
 
@@ -63,7 +66,7 @@ class TestExtractRequiresType:
 class TestExtractWithPydantic:
     """Tests for extract() with Pydantic models."""
 
-    @patch.object(AI, '_complete')
+    @patch.object(AI, "_complete")
     def test_extract_with_pydantic_model(self, mock_complete):
         """extract() should work with Pydantic models."""
         mock_complete.return_value = '{"name": "Alice", "guests": 4}'
@@ -75,7 +78,7 @@ class TestExtractWithPydantic:
         assert result.name == "Alice"
         assert result.guests == 4
 
-    @patch.object(AI, '_complete')
+    @patch.object(AI, "_complete")
     def test_extract_pydantic_includes_schema_in_prompt(self, mock_complete):
         """extract() should include Pydantic schema in the prompt."""
         mock_complete.return_value = '{"name": "Bob", "guests": 2}'
@@ -93,7 +96,7 @@ class TestExtractWithPydantic:
 class TestExtractWithDataclass:
     """Tests for extract() with dataclasses."""
 
-    @patch.object(AI, '_complete')
+    @patch.object(AI, "_complete")
     def test_extract_with_dataclass(self, mock_complete):
         """extract() should work with dataclasses."""
         mock_complete.return_value = '{"name": "Charlie", "guests": 3}'
@@ -105,7 +108,7 @@ class TestExtractWithDataclass:
         assert result.name == "Charlie"
         assert result.guests == 3
 
-    @patch.object(AI, '_complete')
+    @patch.object(AI, "_complete")
     def test_extract_dataclass_includes_fields_in_prompt(self, mock_complete):
         """extract() should include dataclass fields in the prompt."""
         mock_complete.return_value = '{"name": "Dana", "guests": 1}'
@@ -123,7 +126,7 @@ class TestExtractWithDataclass:
 class TestExtractJsonParsing:
     """Tests for JSON parsing in extract()."""
 
-    @patch.object(AI, '_complete')
+    @patch.object(AI, "_complete")
     def test_extract_handles_json_in_markdown(self, mock_complete):
         """extract() should handle JSON wrapped in markdown code blocks."""
         mock_complete.return_value = '```json\n{"name": "Eve", "guests": 5}\n```'
@@ -135,10 +138,10 @@ class TestExtractJsonParsing:
         assert result.name == "Eve"
         assert result.guests == 5
 
-    @patch.object(AI, '_complete')
+    @patch.object(AI, "_complete")
     def test_extract_raises_on_invalid_json(self, mock_complete):
         """extract() should raise TypeInferenceError on invalid JSON."""
-        mock_complete.return_value = 'This is not JSON at all'
+        mock_complete.return_value = "This is not JSON at all"
 
         ai_instance = AI()
 

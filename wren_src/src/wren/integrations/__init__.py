@@ -20,17 +20,14 @@ Usage:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ..core.registry import registry
 from .base import BaseIntegration
 from .docs import AuthType, IntegrationDocs, render_all_docs
 
-if TYPE_CHECKING:
-    from typing import Type
-
 # Registry of available integrations
-_INTEGRATION_REGISTRY: dict[str, Type[BaseIntegration]] = {}
+_INTEGRATION_REGISTRY: dict[str, type[BaseIntegration]] = {}
 
 # Registry of integration documentation
 _DOCS_REGISTRY: dict[str, IntegrationDocs] = {}
@@ -39,7 +36,7 @@ _DOCS_REGISTRY: dict[str, IntegrationDocs] = {}
 def register_integration(name: str):
     """Decorator to register an integration class and its documentation."""
 
-    def decorator(cls: Type[BaseIntegration]) -> Type[BaseIntegration]:
+    def decorator(cls: type[BaseIntegration]) -> type[BaseIntegration]:
         _INTEGRATION_REGISTRY[name] = cls
         # Also register DOCS if the class has them
         if hasattr(cls, "DOCS") and cls.DOCS is not None:
@@ -173,11 +170,13 @@ class IntegrationManager:
 # Global integration manager instance
 integrations = IntegrationManager()
 
-# Import integrations to register them
-from . import cron  # noqa: E402, F401
-from . import gmail  # noqa: E402, F401
-from . import messaging  # noqa: E402, F401
-from . import slack  # noqa: E402, F401
+# Import integrations to register them (side effect: registers them)
+from . import (  # noqa: E402, F401
+    cron,
+    gmail,
+    messaging,
+    slack,
+)
 
 __all__ = [
     "integrations",

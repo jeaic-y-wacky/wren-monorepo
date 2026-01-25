@@ -51,7 +51,7 @@ class GmailIntegration(StubIntegration):
                     ),
                 ],
                 returns="list[Email] - List of email objects with subject, body, from_addr, date",
-                example='emails = gmail.inbox(unread=True, limit=10)',
+                example="emails = gmail.inbox(unread=True, limit=10)",
             ),
             MethodDoc(
                 name="send_email",
