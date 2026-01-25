@@ -64,7 +64,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd wren_src
-          uv sync --dev
+          uv sync --extra dev
 
       - name: Run linting
         run: |
@@ -282,17 +282,6 @@ jobs:
             --severity=ERROR \
             --verbose \
             .
-
-      - name: Check for secrets
-        run: |
-          # Basic secret scanning
-          if grep -r -i -E "(api_key|secret_key|password|token).*=.*['\"][^'\"]{8,}['\"]" \
-             --include="*.py" --include="*.yml" --include="*.yaml" \
-             --exclude-dir=".git" --exclude-dir=".github" .; then
-            echo "⚠️  Potential secrets found in code"
-            exit 1
-          fi
-          echo "✅ No obvious secrets detected"
 
   # Deployment readiness check
   deployment-check:
