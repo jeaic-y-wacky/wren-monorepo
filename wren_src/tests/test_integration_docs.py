@@ -222,8 +222,8 @@ class TestIntegrationManagerDocsMethods:
     """Test the IntegrationManager.list/get_docs/render_docs methods."""
 
     def test_manager_list(self):
-        """integrations.list() should work."""
-        available = integrations.list()
+        """integrations.list_all() should work."""
+        available = integrations.list_all()
         assert isinstance(available, list)
         assert "gmail" in available
 

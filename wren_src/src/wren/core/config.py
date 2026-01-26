@@ -94,7 +94,7 @@ def load_config() -> WrenConfig:
     - OPENAI_API_KEY for provider keys
     - Standard environment variables as fallbacks
     """
-    config_values = {}
+    config_values: dict[str, Any] = {}
 
     # Map environment variables to config fields
     env_mapping = {

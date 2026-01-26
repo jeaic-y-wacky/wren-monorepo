@@ -13,7 +13,7 @@ Usage:
     messaging.post("Hello!")  # Connects lazily here
 
     # Documentation access
-    wren.integrations.list()           # ["cron", "gmail", ...]
+    wren.integrations.list_all()           # ["cron", "gmail", ...]
     wren.integrations.get_docs("gmail") # IntegrationDocs for gmail
     wren.integrations.render_docs()     # Markdown of all integration docs
 """
@@ -145,12 +145,12 @@ class IntegrationManager:
         slack = wren.integrations.slack.init(token="...")
 
     Documentation access:
-        wren.integrations.list()            # List all integration names
+        wren.integrations.list_all()            # List all integration names
         wren.integrations.get_docs("gmail") # Get docs for one integration
         wren.integrations.render_docs()     # Render all docs as markdown
     """
 
-    def list(self) -> list[str]:
+    def list_all(self) -> list[str]:
         """List all registered integration names."""
         return list_integrations()
 

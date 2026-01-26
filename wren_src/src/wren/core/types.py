@@ -15,6 +15,7 @@ from typing import (
     Any,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_origin,
     get_type_hints,
@@ -70,7 +71,7 @@ class DynamicObject:
         return bool(self._data)
 
     # Type conversion methods
-    def bool(self) -> bool:
+    def to_bool(self) -> bool:
         """Convert to boolean."""
         if isinstance(self._data, dict) and len(self._data) == 1:
             # If there's a single value, use it
@@ -78,28 +79,28 @@ class DynamicObject:
             return bool(value)
         return bool(self._data)
 
-    def int(self) -> int:
+    def to_int(self) -> int:
         """Convert to integer."""
         if isinstance(self._data, dict) and len(self._data) == 1:
             value = next(iter(self._data.values()))
             return int(value)
         raise ValueError(f"Cannot convert {self._data} to int")
 
-    def float(self) -> float:
+    def to_float(self) -> float:
         """Convert to float."""
         if isinstance(self._data, dict) and len(self._data) == 1:
             value = next(iter(self._data.values()))
             return float(value)
         raise ValueError(f"Cannot convert {self._data} to float")
 
-    def str(self) -> str:
+    def to_str(self) -> str:
         """Convert to string."""
         if isinstance(self._data, dict) and len(self._data) == 1:
             value = next(iter(self._data.values()))
             return str(value)
         return json.dumps(self._data)
 
-    def date(self) -> date:
+    def to_date(self) -> date:
         """Convert to date."""
         if isinstance(self._data, dict):
             if "date" in self._data:
@@ -109,11 +110,11 @@ class DynamicObject:
                 return parse_date(value)
         raise ValueError(f"Cannot convert {self._data} to date")
 
-    def dict(self) -> dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return self._data.copy()
 
-    def json(self, **kwargs) -> str:
+    def to_json(self, **kwargs) -> str:
         """Convert to JSON string."""
         return json.dumps(self._data, default=str, **kwargs)
 
@@ -210,12 +211,12 @@ def convert_to_type(value: Any, target_type: type[T]) -> T:
     # Handle None
     if value is None:
         if target_type is type(None):
-            return None
+            return cast(T, None)
         origin = get_origin(target_type)
         if origin is Union:
             args = get_args(target_type)
             if type(None) in args:
-                return None
+                return cast(T, None)
         raise ValueError(f"Cannot convert None to {target_type}")
 
     # Handle Optional
@@ -237,15 +238,15 @@ def convert_to_type(value: Any, target_type: type[T]) -> T:
         if isinstance(value, dict) and len(value) == 1:
             # Extract single value from dict
             value = next(iter(value.values()))
-        return target_type(value)
+        return target_type(value)  # type: ignore[call-arg]
 
     # Handle date/datetime
     if target_type is date:
-        return parse_date(value)
+        return cast(T, parse_date(value))
     if target_type is datetime:
         if isinstance(value, str):
-            return datetime.fromisoformat(value)
-        return datetime(value)
+            return cast(T, datetime.fromisoformat(value))
+        raise ValueError(f"Cannot convert {type(value)} to datetime")
 
     # Handle Pydantic models
     if isinstance(target_type, type) and issubclass(target_type, BaseModel):
@@ -262,7 +263,7 @@ def convert_to_type(value: Any, target_type: type[T]) -> T:
         elif isinstance(value, DynamicObject):
             return target_type(**value._data)
         else:
-            return target_type(value)
+            return target_type(value)  # type: ignore[call-arg]
 
     # Handle dataclasses
     if is_dataclass(target_type):
@@ -270,7 +271,7 @@ def convert_to_type(value: Any, target_type: type[T]) -> T:
             return target_type(**value)
         if isinstance(value, DynamicObject):
             return target_type(**value._data)
-        return target_type(value)
+        return target_type(value)  # type: ignore[call-arg]
 
     # Handle List
     if origin is list or origin is list:
@@ -278,28 +279,28 @@ def convert_to_type(value: Any, target_type: type[T]) -> T:
         if args:
             item_type = args[0]
             if isinstance(value, list):
-                return [convert_to_type(item, item_type) for item in value]
-            return [convert_to_type(value, item_type)]
-        return list(value)
+                return cast(T, [convert_to_type(item, item_type) for item in value])
+            return cast(T, [convert_to_type(value, item_type)])
+        return cast(T, list(value))
 
     # Handle Dict
     if origin is dict or origin is dict:
         if isinstance(value, dict):
-            return value
+            return cast(T, value)
         if isinstance(value, DynamicObject):
-            return value._data
-        return dict(value)
+            return cast(T, value._data)
+        return cast(T, dict(value))
 
     # Handle DynamicObject
     if target_type is DynamicObject:
         if isinstance(value, DynamicObject):
-            return value
+            return cast(T, value)
         if isinstance(value, dict):
-            return DynamicObject(value)
-        return DynamicObject({"value": value})
+            return cast(T, DynamicObject(value))
+        return cast(T, DynamicObject({"value": value}))
 
     # Default: try direct conversion
-    return target_type(value)
+    return cast(T, target_type(value))  # type: ignore[call-arg]
 
 
 def create_dynamic_model(name: str, fields: dict[str, Any]) -> type[BaseModel]:
@@ -353,27 +354,27 @@ class TypedResult:
         """Convert to specific type."""
         return convert_to_type(self.value, target_type)
 
-    def bool(self) -> bool:
+    def to_bool(self) -> bool:
         """Convert to boolean."""
         return convert_to_type(self.value, bool)
 
-    def int(self) -> int:
+    def to_int(self) -> int:
         """Convert to integer."""
         return convert_to_type(self.value, int)
 
-    def float(self) -> float:
+    def to_float(self) -> float:
         """Convert to float."""
         return convert_to_type(self.value, float)
 
-    def str(self) -> str:
+    def to_str(self) -> str:
         """Convert to string."""
         return convert_to_type(self.value, str)
 
-    def date(self) -> date:
+    def to_date(self) -> date:
         """Convert to date."""
         return convert_to_type(self.value, date)
 
-    def dict(self) -> dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return convert_to_type(self.value, dict[str, Any])
 

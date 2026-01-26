@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 ErrorType = Literal["AgentFixableError", "UserFacingConfigError", "InternalError"]
 
@@ -40,8 +40,8 @@ class ClassifiedError:
     location: ErrorLocation | None = None
     original_error: str | None = None
 
-    def to_dict(self) -> dict:
-        d = {
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
             "error_type": self.error_type,
             "error_code": self.error_code,
             "message": self.message,
