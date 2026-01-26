@@ -189,59 +189,9 @@ jobs:
           name: wren-backend
           fail_ci_if_error: false
 
-  # Full integration test across all components
-  integration-test:
-    runs-on: ubuntu-latest
-    needs: [test-wren-src, test-wren-agent, test-wren-backend]
-    if: always() && (needs.test-wren-src.result == 'success' || needs.test-wren-src.result == 'skipped') && (needs.test-wren-agent.result == 'success' || needs.test-wren-agent.result == 'skipped') && (needs.test-wren-backend.result == 'success' || needs.test-wren-backend.result == 'skipped')
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: "latest"
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Install all dependencies
-        run: |
-          # Install SDK
-          cd wren_src && uv sync --dev && cd ..
-          # Install Agent
-          cd wren_agent && uv sync --dev && cd ..
-          # Install Backend
-          cd wren_backend && uv sync --dev && cd ..
-
-      - name: Start backend server
-        run: |
-          cd wren_backend
-          uv run uvicorn wren_backend.main:app --host 127.0.0.1 --port 8002 &
-          sleep 5
-
-      - name: Test agent -> SDK -> backend workflow
-        run: |
-          # Test full workflow: Agent generates script -> SDK validates -> Backend deploys
-          export WREN_PLATFORM_URL=http://127.0.0.1:8002
-          export WREN_PLATFORM_API_KEY=integration_test_key
-          export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
-
-          # Generate script with agent
-          cd wren_agent
-          echo "Create a simple script that prints hello world on a schedule" > /tmp/test_request.txt
-          uv run python -m agent.main "$(cat /tmp/test_request.txt)" --output /tmp/generated_script.py
-
-          # Validate with SDK
-          cd ../wren_src
-          uv run wren test /tmp/generated_script.py
-          uv run wren validate /tmp/generated_script.py
-
-          # Deploy to backend
-          uv run wren deploy /tmp/generated_script.py
+  # Note: Full integration test (agent -> SDK -> backend) disabled as it
+  # requires real OpenAI API calls and was not properly configured.
+  # TODO: Add proper integration tests with mocks or a test harness.
 
   # Security and quality checks
   security-and-quality:
