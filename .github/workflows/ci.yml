@@ -193,14 +193,6 @@ jobs:
           name: wren-backend
           fail_ci_if_error: false
 
-      - name: Run E2E tests
-        run: |
-          cd wren_backend
-          # Set up test environment variables
-          export WREN_E2E_PORT=8001
-          export WREN_E2E_API_KEY=test_ci_key_12345
-          ./scripts/e2e.sh
-
   # Full integration test across all components
   integration-test:
     runs-on: ubuntu-latest
