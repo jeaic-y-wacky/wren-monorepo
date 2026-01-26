@@ -147,12 +147,8 @@ jobs:
           cd wren_agent
           uv run pytest tests/unit/test_static_analyzer.py -v
 
-      - name: Run integration tests
-        run: |
-          cd wren_agent
-          uv run pytest tests/integration/ --verbose
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      # Note: Agent integration tests use a custom runner (not pytest)
+      # Run manually with: python -m tests.integration.test_agent
 
   # Test wren_backend (Platform)
   test-wren-backend:
