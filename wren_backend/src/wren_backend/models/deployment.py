@@ -29,7 +29,7 @@ class TriggerConfig(BaseModel):
     """Configuration for a trigger."""
 
     cron: str | None = None
-    timezone: str = "UTC"
+    timezone: str | None = "UTC"
     filter: dict[str, Any] | None = None
 
 
