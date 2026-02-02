@@ -81,6 +81,7 @@ async def execute_run(
     env = await credential_store.get_env_for_execution(
         deployment.user_id, deployment.integrations
     )
+    log.info("credentials_loaded", user_id=deployment.user_id, integrations=deployment.integrations, env_keys=list(env.keys()))
 
     # Execute
     log.info("executing_script")

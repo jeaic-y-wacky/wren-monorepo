@@ -49,6 +49,26 @@ CRON_SPEC = register_integration(
     )
 )
 
+# Discord - bot token authentication
+DISCORD_SPEC = register_integration(
+    IntegrationSpec(
+        name="discord",
+        display_name="Discord",
+        description="Send messages and interact with Discord servers",
+        credentials=[
+            CredentialSpec(
+                key="bot_token",
+                type=CredentialType.TOKEN,
+                description="Discord bot token",
+                env_var="DISCORD_BOT_TOKEN",
+                required=True,
+            ),
+        ],
+        setup_url_template="https://wrens.ie/integrations/discord/setup?user={user_id}",
+        docs_url="https://docs.wrens.ie/integrations/discord",
+    )
+)
+
 __all__ = [
     # Registry types
     "CredentialSpec",
@@ -65,6 +85,7 @@ __all__ = [
     "SLACK_SPEC",
     "MESSAGING_SPEC",
     "CRON_SPEC",
+    "DISCORD_SPEC",
     # Legacy classes (for backwards compatibility)
     "GmailIntegration",
     "SlackIntegration",
