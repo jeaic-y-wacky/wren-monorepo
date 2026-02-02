@@ -55,6 +55,7 @@ integrations = [
     "google-auth>=2.23.0",
     "slack-sdk>=3.23.0",
     "twilio>=8.0.0",
+    "discord.py>=2.0.0",
 ]
 
 [project.scripts]

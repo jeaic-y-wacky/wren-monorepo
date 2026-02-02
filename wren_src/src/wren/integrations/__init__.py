@@ -173,6 +173,7 @@ integrations = IntegrationManager()
 # Import integrations to register them (side effect: registers them)
 from . import (  # noqa: E402, F401
     cron,
+    discord,
     gmail,
     messaging,
     slack,
