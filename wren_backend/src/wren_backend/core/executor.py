@@ -1,6 +1,7 @@
 """Script executor using subprocess for basic isolation."""
 
 import asyncio
+import os
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -11,6 +12,28 @@ import structlog
 from wren_backend.models.run import RunStatus
 
 logger = structlog.get_logger()
+
+# Path to wren SDK source (for PYTHONPATH injection)
+_WREN_SRC_PATH = Path(__file__).parent.parent.parent.parent.parent / "wren_src" / "src"
+
+# Load environment variables from monorepo root .env (for API keys like OPENAI_API_KEY)
+_MONOREPO_ROOT = Path(__file__).parent.parent.parent.parent.parent
+_DOTENV_PATH = _MONOREPO_ROOT / ".env"
+
+
+def _load_dotenv_vars() -> dict[str, str]:
+    """Load variables from .env file if it exists."""
+    env_vars = {}
+    if _DOTENV_PATH.exists():
+        for line in _DOTENV_PATH.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, _, value = line.partition("=")
+                env_vars[key.strip()] = value.strip()
+    return env_vars
+
+
+_DOTENV_VARS = _load_dotenv_vars()
 
 
 @dataclass
@@ -80,15 +103,24 @@ if __name__ == "__main__":
             log.info("executing_script", script_path=str(script_path))
 
             # Prepare environment
-            process_env = dict(env) if env else {}
+            process_env = dict(os.environ)  # Start with current env
+            process_env.update(_DOTENV_VARS)  # Add .env vars (API keys, etc.)
+            if env:
+                process_env.update(env)  # Add injected credentials
+
+            # Run the script using uv from wren_src to get all dependencies
+            wren_src_dir = _WREN_SRC_PATH.parent  # wren_src directory (parent of src/)
 
             # Run the script
             process = await asyncio.create_subprocess_exec(
-                self.python_path,
+                "uv",
+                "run",
+                "python",
                 str(script_path),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 env=process_env if process_env else None,
+                cwd=str(wren_src_dir),  # Run from wren_src to use its venv
             )
 
             try:
