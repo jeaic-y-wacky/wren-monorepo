@@ -66,6 +66,7 @@ async def run_agent(
     context = AgentContext(
         user_request=user_request,
         max_iterations=max_iterations,
+        verbose=verbose,
     )
     if workspace:
         context.workspace_dir = Path(workspace)

@@ -37,6 +37,9 @@ async def write_wren_script(
         # Return structured error matching test_wren_script format
         result = analysis.to_dict()
         ctx.context.last_test_result = result
+        if ctx.context.verbose:
+            print(f"  [iter {ctx.context.iteration_count}] write_wren_script → BLOCKED by static analysis")
+            print(f"    {result.get('message', '')}")
         return json.dumps(result, indent=2)
 
     # Store warnings for context (but continue with write)
@@ -68,6 +71,13 @@ async def write_wren_script(
         ctx.context.iteration_count = 0
     else:
         ctx.context.iteration_count += 1
+
+    # Verbose logging
+    if ctx.context.verbose:
+        iter_label = f"[iter {ctx.context.iteration_count}]"
+        print(f"  {iter_label} write_wren_script → {script_path.name}")
+        for i, line in enumerate(code.splitlines(), 1):
+            print(f"    {i:3d} │ {line}")
 
     # Build response message
     msg = f"Script written to {script_path}."

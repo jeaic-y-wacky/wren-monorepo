@@ -30,6 +30,10 @@ async def test_wren_script(
         - fix_hint: Actionable suggestion for fixing
         - location: {file, line, col} if available
     """
+    # Verbose logging: entry
+    if ctx.context.verbose:
+        print(f"  [iter {ctx.context.iteration_count}] test_wren_script called (script_path={script_path})")
+
     # Determine script path
     if script_path:
         path = Path(script_path)
@@ -106,6 +110,28 @@ async def test_wren_script(
         # Track error history for learning
         if not test_result.get("valid", False):
             ctx.context.record_error(test_result)
+
+        # Verbose logging
+        if ctx.context.verbose:
+            valid = test_result.get("valid", False)
+            if valid:
+                meta = test_result.get("metadata", {})
+                integrations = meta.get("integrations", [])
+                schedules = meta.get("schedules", [])
+                print(f"  [iter {ctx.context.iteration_count}] test_wren_script → ✓ VALID")
+                if integrations:
+                    print(f"    integrations: {integrations}")
+                if schedules:
+                    for s in schedules:
+                        print(f"    schedule: {s['cron']} → {s['func_name']}")
+            else:
+                err_type = test_result.get("error_type", "Unknown")
+                msg = test_result.get("message", "")
+                hint = test_result.get("fix_hint", "")
+                print(f"  [iter {ctx.context.iteration_count}] test_wren_script → ✗ FAILED ({err_type})")
+                print(f"    error: {msg}")
+                if hint:
+                    print(f"    hint: {hint}")
 
         return json.dumps(test_result, indent=2)
 

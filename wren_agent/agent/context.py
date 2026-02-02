@@ -31,6 +31,9 @@ class AgentContext:
     # Error history (for learning from mistakes)
     error_history: list[dict[str, Any]] = field(default_factory=list)
 
+    # Verbose logging
+    verbose: bool = False
+
     def record_error(self, error: dict[str, Any]) -> None:
         """Record an error for history tracking."""
         self.error_history.append(
