@@ -38,7 +38,10 @@ async def write_wren_script(
         result = analysis.to_dict()
         ctx.context.last_test_result = result
         if ctx.context.verbose:
-            print(f"  [iter {ctx.context.iteration_count}] write_wren_script → BLOCKED by static analysis")
+            print(
+                f"  [iter {ctx.context.iteration_count}] write_wren_script → BLOCKED "
+                f"by static analysis"
+            )
             print(f"    {result.get('message', '')}")
         return json.dumps(result, indent=2)
 

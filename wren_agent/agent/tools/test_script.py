@@ -32,7 +32,10 @@ async def test_wren_script(
     """
     # Verbose logging: entry
     if ctx.context.verbose:
-        print(f"  [iter {ctx.context.iteration_count}] test_wren_script called (script_path={script_path})")
+        print(
+            f"  [iter {ctx.context.iteration_count}] test_wren_script called "
+            f"(script_path={script_path})"
+        )
 
     # Determine script path
     if script_path:
@@ -128,7 +131,10 @@ async def test_wren_script(
                 err_type = test_result.get("error_type", "Unknown")
                 msg = test_result.get("message", "")
                 hint = test_result.get("fix_hint", "")
-                print(f"  [iter {ctx.context.iteration_count}] test_wren_script → ✗ FAILED ({err_type})")
+                print(
+                    f"  [iter {ctx.context.iteration_count}] test_wren_script → ✗ FAILED "
+                    f"({err_type})"
+                )
                 print(f"    error: {msg}")
                 if hint:
                     print(f"    hint: {hint}")

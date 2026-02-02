@@ -266,7 +266,7 @@ All errors follow a consistent classification:
 | Traces | Run IDs | Propagate through execution |
 
 **Deliverables:**
-- [ ] Error classes: `AgentFixableError`, `UserFacingConfigError`, `InternalError`
+- [x] Error classes: `AgentFixableError`, `UserFacingConfigError`, `InternalError` (implemented in `wren_backend/src/wren_backend/models/errors.py`; handlers wired in `wren_backend/src/wren_backend/main.py`)
 - [ ] Correlation ID middleware
 - [ ] Execution log capture and storage
 - [ ] `/v1/runs/{id}/logs` endpoint

@@ -18,7 +18,12 @@ def summarize_daily_emails():
     summaries = []
     for email in all_emails:
         summary: str = wren.ai.summarize(email.body, max_length=50)
-        summaries.append(EmailSummary(subject=email.subject, sender=email.from_addr, summary=summary))
+        summaries.append(
+            EmailSummary(subject=email.subject, sender=email.from_addr, summary=summary)
+        )
     # Format and send the summary to Slack
-    summary_text = "\n".join([f"From: {email.sender}\nSubject: {email.subject}\nSummary: {email.summary}\n" for email in summaries])
+    summary_text = "\n".join([
+        f"From: {email.sender}\nSubject: {email.subject}\nSummary: {email.summary}\n"
+        for email in summaries
+    ])
     slack.post(summary_text)

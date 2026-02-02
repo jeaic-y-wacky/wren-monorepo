@@ -1,5 +1,4 @@
 import wren
-from pydantic import BaseModel
 
 # Initialize Slack integration at module level
 slack = wren.integrations.slack.init(default_channel="#daily-summaries")

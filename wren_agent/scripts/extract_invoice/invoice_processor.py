@@ -1,6 +1,7 @@
 import wren
 from pydantic import BaseModel
 
+
 # Define a Pydantic model for structured data extraction
 class Invoice(BaseModel):
     amount: str
@@ -14,7 +15,7 @@ gmail = wren.integrations.gmail.init()
 def process_invoice(email):
     # Extract the amount and sender from the email
     invoice: Invoice = wren.ai.extract(email.body, Invoice)
-    
+
     # Print or further process the extracted information
     print(f"Invoice from {invoice.sender} for amount {invoice.amount}")
     # More processing logic can be added here

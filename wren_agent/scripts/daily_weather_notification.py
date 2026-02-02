@@ -1,7 +1,8 @@
 import wren
 
 # Initialize integration at module level
-# Assume wren.integrations.discord.init() is available and could be: wren.integrations.discord.init(default_channel="#weather")
+# Assume wren.integrations.discord.init() is available and could be:
+# wren.integrations.discord.init(default_channel="#weather")
 discord = wren.integrations.discord.init(default_channel="#weather")
 
 # Schedule trigger for 9 AM daily

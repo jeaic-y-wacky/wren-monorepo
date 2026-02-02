@@ -1,6 +1,7 @@
 import wren
 from pydantic import BaseModel
 
+
 # Define a Pydantic model for invoice data
 class InvoiceData(BaseModel):
     amount: str

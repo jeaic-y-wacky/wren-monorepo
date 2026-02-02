@@ -13,7 +13,7 @@ class InvoiceData(BaseModel):
 def handle_invoice_email(email):
     # Extract invoice details
     invoice_data: InvoiceData = wren.ai.extract(email.body)
-    
+
     # Log the extracted data
     print(f"Invoice amount: {invoice_data.amount}")
     print(f"Sender: {invoice_data.sender}")
