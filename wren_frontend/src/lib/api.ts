@@ -32,12 +32,34 @@ export const api = {
     get: (id: string) => apiFetch<Run>(`/v1/runs/${id}`),
   },
   credentials: {
-    list: () => apiFetch<Credential[]>('/v1/credentials'),
+    // Check status of a single integration
+    get: async (integration: string): Promise<CredentialStatus | null> => {
+      try {
+        return await apiFetch<CredentialStatus>(`/v1/credentials/${integration}`)
+      } catch {
+        return null // Not connected
+      }
+    },
+    // Check status of multiple integrations in parallel
+    list: async (integrations: string[]): Promise<Credential[]> => {
+      const results = await Promise.all(
+        integrations.map(async (integration) => {
+          const status = await api.credentials.get(integration)
+          if (status) {
+            return { integration, ...status }
+          }
+          return null
+        })
+      )
+      return results.filter((r): r is Credential => r !== null)
+    },
+    // Save credentials for an integration (PUT)
     save: (integration: string, credentials: Record<string, string>) =>
-      apiFetch<Credential>('/v1/credentials', {
-        method: 'POST',
-        body: JSON.stringify({ integration, credentials }),
+      apiFetch<CredentialStatus>(`/v1/credentials/${integration}`, {
+        method: 'PUT',
+        body: JSON.stringify(credentials),
       }),
+    // Delete credentials for an integration
     delete: (integration: string) =>
       apiFetch<void>(`/v1/credentials/${integration}`, { method: 'DELETE' }),
   },
@@ -67,9 +89,15 @@ export interface Run {
   stderr: string | null
 }
 
+// Response from GET /v1/credentials/{integration}
+export interface CredentialStatus {
+  configured: boolean
+  updated_at: string | null
+}
+
+// Combined credential info for UI
 export interface Credential {
-  id: string
   integration: string
-  created_at: string
-  updated_at: string
+  configured: boolean
+  updated_at: string | null
 }

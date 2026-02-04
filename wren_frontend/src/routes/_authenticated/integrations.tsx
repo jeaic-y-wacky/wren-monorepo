@@ -59,7 +59,9 @@ function IntegrationsPage() {
 
   const loadCredentials = async () => {
     try {
-      const creds = await api.credentials.list()
+      // Fetch status for all known integrations in parallel
+      const integrationIds = INTEGRATIONS.map(i => i.id)
+      const creds = await api.credentials.list(integrationIds)
       setCredentials(creds)
     } catch (e) {
       console.error('Failed to load credentials:', e)
@@ -69,7 +71,8 @@ function IntegrationsPage() {
   }
 
   const isConnected = (integrationId: string) => {
-    return credentials.some(c => c.integration === integrationId)
+    const cred = credentials.find(c => c.integration === integrationId)
+    return cred?.configured ?? false
   }
 
   const handleConnect = (integrationId: IntegrationId) => {
