@@ -31,6 +31,16 @@ export const api = {
     list: (deploymentId: string) => apiFetch<Run[]>(`/v1/deployments/${deploymentId}/runs`),
     get: (id: string) => apiFetch<Run>(`/v1/runs/${id}`),
   },
+  credentials: {
+    list: () => apiFetch<Credential[]>('/v1/credentials'),
+    save: (integration: string, credentials: Record<string, string>) =>
+      apiFetch<Credential>('/v1/credentials', {
+        method: 'POST',
+        body: JSON.stringify({ integration, credentials }),
+      }),
+    delete: (integration: string) =>
+      apiFetch<void>(`/v1/credentials/${integration}`, { method: 'DELETE' }),
+  },
 }
 
 // Types - extend as needed
@@ -55,4 +65,11 @@ export interface Run {
   duration_ms: number | null
   stdout: string | null
   stderr: string | null
+}
+
+export interface Credential {
+  id: string
+  integration: string
+  created_at: string
+  updated_at: string
 }
