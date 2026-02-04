@@ -1,30 +1,31 @@
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
-export const Route = createFileRoute('/login')({
-  component: LoginPage,
+export const Route = createFileRoute('/signup')({
+  component: SignupPage,
 })
 
-function LoginPage() {
-  const navigate = useNavigate()
+function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signUp({ email, password })
 
     if (error) {
       setError(error.message)
       setLoading(false)
     } else {
-      navigate({ to: '/' })
+      setSuccess(true)
+      setLoading(false)
     }
   }
 
@@ -35,12 +36,28 @@ function LoginPage() {
     })
   }
 
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full p-8 bg-white rounded-lg shadow text-center">
+          <h1 className="text-2xl font-bold mb-4">Check your email</h1>
+          <p className="text-gray-600 mb-4">
+            We sent a confirmation link to <strong>{email}</strong>
+          </p>
+          <Link to="/login" className="text-blue-600 hover:underline">
+            Back to login
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full p-8 bg-white rounded-lg shadow">
-        <h1 className="text-2xl font-bold text-center mb-6">Wren</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">Create account</h1>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleSignup} className="space-y-4">
           <input
             type="email"
             placeholder="Email"
@@ -51,10 +68,11 @@ function LoginPage() {
           />
           <input
             type="password"
-            placeholder="Password"
+            placeholder="Password (min 6 characters)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-3 py-2 border rounded-md"
+            minLength={6}
             required
           />
 
@@ -65,7 +83,7 @@ function LoginPage() {
             disabled={loading}
             className="w-full py-2 bg-black text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? 'Creating account...' : 'Sign up'}
           </button>
         </form>
 
@@ -96,9 +114,9 @@ function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-sm text-gray-600">
-          Don't have an account?{' '}
-          <Link to="/signup" className="text-blue-600 hover:underline">
-            Sign up
+          Already have an account?{' '}
+          <Link to="/login" className="text-blue-600 hover:underline">
+            Sign in
           </Link>
         </p>
       </div>
