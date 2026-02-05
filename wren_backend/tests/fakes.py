@@ -9,14 +9,14 @@ from datetime import UTC, datetime
 from wren_backend.core.credentials import CredentialStore
 from wren_backend.core.storage import Storage, generate_id
 from wren_backend.models.deployment import DeploymentStatus
-from wren_backend.models.run import Run, RunStatus
+from wren_backend.models.run import RunStatus
 
 
 class InMemoryStorage(Storage):
     """Dict-backed storage for testing — no Supabase required."""
 
     def __init__(self):
-        # Skip parent __init__ (it sets up Supabase client placeholders)
+        super().__init__()
         self._deployments: dict[str, dict] = {}
         self._runs: dict[str, dict] = {}
 
@@ -147,7 +147,7 @@ class InMemoryCredentialStore(CredentialStore):
     """Dict-backed credential store for testing — no Supabase required."""
 
     def __init__(self):
-        # Skip parent __init__
+        super().__init__()
         self._creds: dict[tuple[str, str], dict[str, str]] = {}
 
     async def connect(self) -> None:
