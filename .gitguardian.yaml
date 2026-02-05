@@ -1,0 +1,19 @@
+version: 2
+
+secret:
+  # Exclude test files and fixtures from secret scanning
+  ignored-paths:
+    - "**/*.test.*"
+    - "**/*.spec.*"
+    - "**/test/**"
+    - "**/tests/**"
+    - "**/__tests__/**"
+    - "**/fixtures/**"
+    - "examples/**"
+
+  # Specific false positives from test mock data
+  ignored-matches:
+    - name: test-mock-slack-token
+      match: "xoxb-123"
+    - name: test-mock-access-token
+      match: "test-token-123"
