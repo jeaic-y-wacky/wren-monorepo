@@ -69,8 +69,10 @@ async def execute_run(
         log.error("deployment_not_found")
         return
 
-    # Create run record
-    run = await storage.create_run(deployment_id, trigger_type, func_name)
+    # Create run record with user_id for RLS
+    run = await storage.create_run(
+        deployment_id, deployment.user_id, trigger_type, func_name
+    )
     log = log.bind(run_id=run.id)
     log.info("run_created")
 
@@ -81,7 +83,12 @@ async def execute_run(
     env = await credential_store.get_env_for_execution(
         deployment.user_id, deployment.integrations
     )
-    log.info("credentials_loaded", user_id=deployment.user_id, integrations=deployment.integrations, env_keys=list(env.keys()))
+    log.info(
+        "credentials_loaded",
+        user_id=deployment.user_id,
+        integrations=deployment.integrations,
+        env_keys=list(env.keys()),
+    )
 
     # Execute
     log.info("executing_script")
@@ -121,8 +128,11 @@ async def lifespan(app: FastAPI):
     await storage.connect()
     logger.info("storage_connected")
 
-    scheduler = Scheduler()
     credential_store = CredentialStore()
+    await credential_store.connect()
+    logger.info("credential_store_connected")
+
+    scheduler = Scheduler()
     executor = Executor()
 
     # Set up scheduler callback

@@ -5,13 +5,13 @@ description = "Execution platform for agent-written scripts"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "aiosqlite>=0.21.0",
     "apscheduler>=3.11.1",
     "fastapi>=0.124.0",
     "pydantic>=2.12.5",
+    "pyjwt>=2.8.0",
     "python-multipart>=0.0.20",
-    "sqlalchemy[asyncio]>=2.0.44",
     "structlog>=25.5.0",
+    "supabase>=2.0.0",
     "uvicorn>=0.38.0",
 ]
 
