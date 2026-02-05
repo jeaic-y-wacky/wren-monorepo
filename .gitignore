@@ -56,4 +56,7 @@ wren.db
 # Claude Code
 .claude/
 
+# Blog drafts
+docs/blog_posts/
+
 # Local scratch files (add specific files as needed)
