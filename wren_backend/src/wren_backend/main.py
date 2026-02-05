@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from wren_backend.api import api_router
@@ -69,8 +70,10 @@ async def execute_run(
         log.error("deployment_not_found")
         return
 
-    # Create run record
-    run = await storage.create_run(deployment_id, trigger_type, func_name)
+    # Create run record with user_id for RLS
+    run = await storage.create_run(
+        deployment_id, deployment.user_id, trigger_type, func_name
+    )
     log = log.bind(run_id=run.id)
     log.info("run_created")
 
@@ -81,7 +84,12 @@ async def execute_run(
     env = await credential_store.get_env_for_execution(
         deployment.user_id, deployment.integrations
     )
-    log.info("credentials_loaded", user_id=deployment.user_id, integrations=deployment.integrations, env_keys=list(env.keys()))
+    log.info(
+        "credentials_loaded",
+        user_id=deployment.user_id,
+        integrations=deployment.integrations,
+        env_keys=list(env.keys()),
+    )
 
     # Execute
     log.info("executing_script")
@@ -105,7 +113,6 @@ async def execute_run(
         "run_completed",
         status=result.status.value,
         exit_code=result.exit_code,
-        duration_ms=run.duration_ms,
     )
 
 
@@ -121,8 +128,11 @@ async def lifespan(app: FastAPI):
     await storage.connect()
     logger.info("storage_connected")
 
-    scheduler = Scheduler()
     credential_store = CredentialStore()
+    await credential_store.connect()
+    logger.info("credential_store_connected")
+
+    scheduler = Scheduler()
     executor = Executor()
 
     # Set up scheduler callback
@@ -218,6 +228,18 @@ async def internal_error_handler(
         ).model_dump(),
     )
 
+
+# CORS — allow the frontend origin(s)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include API routes
 app.include_router(api_router)

@@ -53,7 +53,6 @@ async def test_validate_missing_integration(client, auth_headers):
 
 
 @pytest.mark.asyncio
-@pytest.mark.asyncio
 async def test_validate_requires_auth(client):
     """Test validation requires authentication."""
     response = await client.post(

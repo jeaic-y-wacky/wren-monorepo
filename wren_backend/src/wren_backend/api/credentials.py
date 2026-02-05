@@ -12,7 +12,6 @@ router = APIRouter(prefix="/credentials")
 class SetCredentialsRequest(BaseModel):
     """Request body for setting credentials."""
 
-    integration: str
     credentials: dict[str, str]
 
 
@@ -51,12 +50,11 @@ async def get_credentials_status(
     credential_store: CredentialStore = Depends(get_credential_store),
 ) -> CredentialsResponse:
     """Check if credentials are configured for an integration."""
-    has_creds = await credential_store.has_credentials(user_id, integration)
     creds = await credential_store.get_credentials(user_id, integration)
 
     return CredentialsResponse(
         integration=integration,
-        configured=has_creds,
+        configured=creds is not None,
         credential_keys=list(creds.keys()) if creds else [],
     )
 

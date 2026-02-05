@@ -33,6 +33,7 @@ class Run(BaseModel):
     stdout: str = ""
     stderr: str = ""
     error_message: str | None = None
+    created_at: datetime | None = None
 
 
 class RunSummary(BaseModel):

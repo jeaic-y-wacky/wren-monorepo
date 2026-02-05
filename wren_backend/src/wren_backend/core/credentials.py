@@ -1,7 +1,7 @@
-"""Credential storage and management.
+"""Credential storage and management using Supabase.
 
 This module handles:
-- Storing user credentials for integrations
+- Storing user credentials for integrations in Supabase
 - Validating credentials exist for script deployment
 - Converting credentials to environment variables for script execution
 
@@ -9,27 +9,38 @@ The credential -> env var mapping is defined in the integration registry.
 """
 
 import structlog
+from supabase import Client
 
-from ..integrations import get_env_for_credentials, get_integration
+from wren_backend.core.supabase_client import get_supabase_admin_client, get_supabase_client
+from wren_backend.integrations import get_env_for_credentials, get_integration
 
 logger = structlog.get_logger()
 
 
 class CredentialStore:
-    """Manages credentials for integrations.
+    """Manages credentials for integrations using Supabase.
 
-    Phase 1: In-memory storage
-    Phase 3 will add:
-    - Encrypted storage (SQLite + encryption or Vault)
-    - OAuth token management with refresh
-    - Audit logging
+    Uses the credentials table in Supabase with RLS policies.
+    The admin client is used for server-side operations.
     """
 
     def __init__(self):
-        # In-memory store for Phase 1
-        # Key format: "{user_id}:{integration}"
-        # Value: dict of credential key -> value
-        self._credentials: dict[str, dict[str, str]] = {}
+        self._client: Client | None = None
+        self._admin_client: Client | None = None
+
+    async def connect(self) -> None:
+        """Initialize the Supabase client connection."""
+        self._client = get_supabase_client()
+        self._admin_client = get_supabase_admin_client()
+        logger.info("credential_store_connected", has_admin=self._admin_client is not None)
+
+    def _get_client(self, use_admin: bool = False) -> Client:
+        """Get the appropriate Supabase client."""
+        if use_admin and self._admin_client:
+            return self._admin_client
+        if not self._client:
+            raise RuntimeError("CredentialStore not connected")
+        return self._client
 
     async def get_credentials(
         self, user_id: str, integration: str
@@ -37,14 +48,25 @@ class CredentialStore:
         """Get credentials for a user's integration.
 
         Args:
-            user_id: The user ID
+            user_id: The user ID (UUID)
             integration: Integration name (e.g., "gmail", "slack")
 
         Returns:
             Credentials dict or None if not configured
         """
-        key = f"{user_id}:{integration}"
-        return self._credentials.get(key)
+        client = self._get_client(use_admin=True)
+        result = (
+            client.table("credentials")
+            .select("credentials")
+            .eq("user_id", user_id)
+            .eq("integration", integration)
+            .execute()
+        )
+
+        if not result.data:
+            return None
+
+        return result.data[0]["credentials"]
 
     async def set_credentials(
         self, user_id: str, integration: str, credentials: dict[str, str]
@@ -52,12 +74,22 @@ class CredentialStore:
         """Store credentials for a user's integration.
 
         Args:
-            user_id: The user ID
+            user_id: The user ID (UUID)
             integration: Integration name
             credentials: Credentials to store (e.g., {"access_token": "...", "refresh_token": "..."})
         """
-        key = f"{user_id}:{integration}"
-        self._credentials[key] = credentials
+        client = self._get_client(use_admin=True)
+
+        # Use upsert to handle both insert and update
+        client.table("credentials").upsert(
+            {
+                "user_id": user_id,
+                "integration": integration,
+                "credentials": credentials,
+            },
+            on_conflict="user_id,integration",
+        ).execute()
+
         logger.info(
             "credentials_stored",
             user_id=user_id,
@@ -77,27 +109,29 @@ class CredentialStore:
             # Integration doesn't require credentials
             return True
 
-        key = f"{user_id}:{integration}"
-        has_creds = key in self._credentials
+        creds = await self.get_credentials(user_id, integration)
+        if not creds:
+            return False
 
         # If integration has required credentials, verify they're all present
-        if has_creds and spec:
-            stored = self._credentials[key]
+        if spec:
             required_keys = spec.get_required_credential_keys()
-            has_creds = all(k in stored for k in required_keys)
+            return all(k in creds for k in required_keys)
 
-        return has_creds
+        return True
 
     async def delete_credentials(self, user_id: str, integration: str) -> None:
         """Delete credentials for a user's integration."""
-        key = f"{user_id}:{integration}"
-        if key in self._credentials:
-            del self._credentials[key]
-            logger.info(
-                "credentials_deleted",
-                user_id=user_id,
-                integration=integration,
-            )
+        client = self._get_client(use_admin=True)
+        client.table("credentials").delete().eq("user_id", user_id).eq(
+            "integration", integration
+        ).execute()
+
+        logger.info(
+            "credentials_deleted",
+            user_id=user_id,
+            integration=integration,
+        )
 
     async def get_env_for_execution(
         self, user_id: str, integrations: list[str]
@@ -108,7 +142,7 @@ class CredentialStore:
         the mapping defined in each integration's spec.
 
         Args:
-            user_id: The user ID
+            user_id: The user ID (UUID)
             integrations: List of integrations the script uses
 
         Returns:
@@ -140,7 +174,7 @@ class CredentialStore:
         Returns list of missing/invalid credential errors.
 
         Args:
-            user_id: The user ID
+            user_id: The user ID (UUID)
             integrations: List of integrations the script uses
 
         Returns:

@@ -146,6 +146,7 @@ async def test_create_run(storage):
 
     run = await storage.create_run(
         deployment_id=deployment.id,
+        user_id="user_123",
         trigger_type="schedule",
         trigger_func="my_func",
     )
@@ -168,6 +169,7 @@ async def test_update_run_lifecycle(storage):
 
     run = await storage.create_run(
         deployment_id=deployment.id,
+        user_id="user_123",
         trigger_type="schedule",
         trigger_func="my_func",
     )
@@ -210,6 +212,7 @@ async def test_get_runs_by_deployment(storage):
     for i in range(3):
         run = await storage.create_run(
             deployment_id=deployment.id,
+            user_id="user_123",
             trigger_type="schedule",
             trigger_func=f"func_{i}",
         )
@@ -241,6 +244,7 @@ async def test_get_last_run(storage):
     for i in range(3):
         run = await storage.create_run(
             deployment_id=deployment.id,
+            user_id="user_123",
             trigger_type="schedule",
             trigger_func=f"func_{i}",
         )

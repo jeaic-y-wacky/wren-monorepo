@@ -1,10 +1,36 @@
 """FastAPI dependency injection for shared resources."""
 
+import hashlib
+import os
+from datetime import UTC, datetime
+
+import jwt
+import structlog
+from jwt import PyJWKClient
 from fastapi import Header, HTTPException
 
 from wren_backend.core.credentials import CredentialStore
 from wren_backend.core.scheduler import Scheduler
 from wren_backend.core.storage import Storage
+from wren_backend.core.supabase_client import get_supabase_admin_client
+
+logger = structlog.get_logger()
+
+# Supabase configuration
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://gvbfhpoolkdlxnvusccg.supabase.co")
+
+# JWKS client for verifying JWTs with asymmetric keys
+_jwks_client: PyJWKClient | None = None
+
+
+def get_jwks_client() -> PyJWKClient:
+    """Get or create the JWKS client for JWT verification."""
+    global _jwks_client
+    if _jwks_client is None:
+        jwks_url = f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json"
+        _jwks_client = PyJWKClient(jwks_url)
+    return _jwks_client
+
 
 # Singleton instances (initialized in main.py)
 _storage: Storage | None = None
@@ -49,38 +75,110 @@ async def get_current_user_id(
     x_api_key: str | None = Header(None, alias="X-API-Key"),
     authorization: str | None = Header(None),
 ) -> str:
-    """Extract and validate user ID from request headers.
-
-    For Phase 1, this is a simple API key implementation.
-    Phase 3+ will add proper authentication (OAuth, JWT, etc.)
+    """Extract and validate user ID from Supabase JWT or API key.
 
     Accepts either:
-    - X-API-Key header
-    - Authorization: Bearer <token> header
+    - Authorization: Bearer <supabase_jwt> header (preferred)
+    - X-API-Key header (for development/testing)
+
+    Returns:
+        User ID (UUID string) from the authenticated user
     """
     token = None
 
-    if x_api_key:
-        token = x_api_key
-    elif authorization and authorization.startswith("Bearer "):
+    if authorization and authorization.startswith("Bearer "):
         token = authorization[7:]
+    elif x_api_key:
+        token = x_api_key
 
     if not token:
         raise HTTPException(
             status_code=401,
-            detail="Missing API key. Provide X-API-Key header or Authorization: Bearer <token>",
+            detail="Missing authentication. Provide Authorization: Bearer <token> header",
         )
 
-    # For Phase 1, the token IS the user_id (simple implementation)
-    # In production, this would validate against a user database
-    # and extract the user_id from a proper token
+    # Try to decode as Supabase JWT using JWKS (asymmetric keys)
+    try:
+        jwks_client = get_jwks_client()
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
 
-    # Basic validation - token should be non-empty and reasonable length
-    if len(token) < 8:
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256", "ES256"],
+            audience="authenticated",
+            issuer=f"{SUPABASE_URL}/auth/v1",
+        )
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token: missing user ID",
+            )
+        return user_id
+    except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=401,
-            detail="Invalid API key format",
+            detail="Token has expired",
         )
+    except jwt.exceptions.PyJWKClientError:
+        # JWKS endpoint is unreachable — do NOT fall through to API key auth.
+        logger.error("jwks_unavailable", url=f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json")
+        raise HTTPException(
+            status_code=503,
+            detail="Authentication service temporarily unavailable",
+        )
+    except jwt.InvalidTokenError:
+        # Not a valid JWT — fall through to API key validation below.
+        pass
 
-    # Return the token as user_id for now
-    return token
+    # Fall back to API key authentication.
+    # Look up the key hash in the api_keys table.
+    return await _validate_api_key(token)
+
+
+def _hash_api_key(key: str) -> str:
+    """Hash an API key for comparison against stored hashes."""
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
+async def _validate_api_key(key: str) -> str:
+    """Validate an API key against the api_keys table.
+
+    Returns the user_id associated with the key, or raises 401.
+    """
+    key_hash = _hash_api_key(key)
+
+    client = get_supabase_admin_client()
+    if client is None:
+        raise HTTPException(
+            status_code=503,
+            detail="API key authentication not available (missing secret key)",
+        )
+    result = (
+        client.table("api_keys")
+        .select("user_id, expires_at")
+        .eq("key_hash", key_hash)
+        .execute()
+    )
+
+    if not result.data:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    row = result.data[0]
+
+    # Check expiration
+    if row.get("expires_at"):
+        expires_at = datetime.fromisoformat(row["expires_at"])
+        if expires_at < datetime.now(UTC):
+            raise HTTPException(status_code=401, detail="API key has expired")
+
+    # Update last_used_at (fire-and-forget, don't block auth)
+    try:
+        client.table("api_keys").update(
+            {"last_used_at": datetime.now(UTC).isoformat()}
+        ).eq("key_hash", key_hash).execute()
+    except Exception:
+        pass  # Non-critical — don't fail auth over a usage timestamp
+
+    return row["user_id"]
