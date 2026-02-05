@@ -1,19 +1,18 @@
 """Pytest fixtures for Wren Backend tests."""
 
 import asyncio
-import tempfile
-from pathlib import Path
 
 import pytest
 import pytest_asyncio
+from fastapi import Header, HTTPException
 from httpx import ASGITransport, AsyncClient
 
-from wren_backend.api.deps import init_dependencies
-from wren_backend.core.credentials import CredentialStore
+from wren_backend.api.deps import get_current_user_id, init_dependencies
 from wren_backend.core.executor import Executor
 from wren_backend.core.scheduler import Scheduler
-from wren_backend.core.storage import Storage
 from wren_backend.main import app
+
+from .fakes import InMemoryCredentialStore, InMemoryStorage
 
 
 @pytest.fixture(scope="session")
@@ -25,11 +24,9 @@ def event_loop():
 
 
 @pytest_asyncio.fixture
-async def storage(tmp_path: Path):
-    """Create a temporary storage instance."""
-    db_path = tmp_path / "test.db"
-    db_url = f"sqlite+aiosqlite:///{db_path}"
-    store = Storage(db_url)
+async def storage():
+    """Create an in-memory storage instance."""
+    store = InMemoryStorage()
     await store.connect()
     yield store
     await store.close()
@@ -47,29 +44,44 @@ def executor():
     return Executor(timeout_seconds=30)
 
 
-@pytest.fixture
-def credential_store():
-    """Create a credential store instance."""
-    return CredentialStore()
-
-
 @pytest_asyncio.fixture
-async def client(storage, scheduler, credential_store):
-    """Create an async test client with initialized dependencies."""
-    init_dependencies(storage, scheduler, credential_store)
-    scheduler.start()
-
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
-
-    scheduler.shutdown(wait=False)
+async def credential_store():
+    """Create an in-memory credential store instance."""
+    store = InMemoryCredentialStore()
+    await store.connect()
+    return store
 
 
 @pytest.fixture
 def api_key():
     """Return a test API key (used as user_id in Phase 1)."""
     return "test_user_12345678"
+
+
+@pytest_asyncio.fixture
+async def client(storage, scheduler, credential_store, api_key):
+    """Create an async test client with initialized dependencies."""
+    init_dependencies(storage, scheduler, credential_store)
+    scheduler.start()
+
+    # Override auth to skip Supabase JWT / API-key lookup.
+    # Preserves 401 for missing credentials (test_validate_requires_auth).
+    async def override_auth(
+        x_api_key: str | None = Header(None, alias="X-API-Key"),
+        authorization: str | None = Header(None),
+    ) -> str:
+        if not x_api_key and not authorization:
+            raise HTTPException(status_code=401, detail="Missing authentication")
+        return api_key
+
+    app.dependency_overrides[get_current_user_id] = override_auth
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+
+    scheduler.shutdown(wait=False)
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
