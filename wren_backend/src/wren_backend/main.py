@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from wren_backend.api import api_router
@@ -112,7 +113,6 @@ async def execute_run(
         "run_completed",
         status=result.status.value,
         exit_code=result.exit_code,
-        duration_ms=run.duration_ms,
     )
 
 
@@ -228,6 +228,18 @@ async def internal_error_handler(
         ).model_dump(),
     )
 
+
+# CORS — allow the frontend origin(s)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include API routes
 app.include_router(api_router)

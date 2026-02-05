@@ -24,11 +24,11 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
 // API endpoints
 export const api = {
   deployments: {
-    list: () => apiFetch<Deployment[]>('/v1/deployments'),
+    list: () => apiFetch<{ deployments: Deployment[] }>('/v1/deployments').then(r => r.deployments),
     get: (id: string) => apiFetch<Deployment>(`/v1/deployments/${id}`),
   },
   runs: {
-    list: (deploymentId: string) => apiFetch<Run[]>(`/v1/deployments/${deploymentId}/runs`),
+    list: (deploymentId: string) => apiFetch<{ runs: Run[] }>(`/v1/deployments/${deploymentId}/runs`).then(r => r.runs),
     get: (id: string) => apiFetch<Run>(`/v1/runs/${id}`),
   },
   credentials: {
@@ -57,7 +57,7 @@ export const api = {
     save: (integration: string, credentials: Record<string, string>) =>
       apiFetch<CredentialStatus>(`/v1/credentials/${integration}`, {
         method: 'PUT',
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({ credentials }),
       }),
     // Delete credentials for an integration
     delete: (integration: string) =>

@@ -35,14 +35,3 @@ def get_supabase_admin_client() -> Client | None:
     if not SUPABASE_SECRET_KEY:
         return None
     return create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)
-
-
-def get_supabase_with_auth(access_token: str) -> Client:
-    """Get a Supabase client with user auth context.
-
-    This creates a new client instance with the user's access token,
-    allowing RLS policies to correctly identify the user.
-    """
-    client = create_client(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
-    client.auth.set_session(access_token, "")
-    return client

@@ -109,8 +109,8 @@ def validate_triggers(
                             type="AgentFixableError",
                             code="INVALID_CRON_EXPRESSION",
                             message=f"Invalid cron expression for '{trigger.func}': {cron_error}",
+                        )
                     )
-                )
 
         elif trigger.type == TriggerType.EMAIL:
             # Email triggers require email integration

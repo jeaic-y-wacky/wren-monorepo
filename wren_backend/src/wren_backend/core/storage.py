@@ -296,6 +296,11 @@ class Storage:
             trigger_type=row["trigger_type"],
             trigger_func=row.get("trigger_func") or "",
             status=RunStatus(row["status"]),
+            created_at=(
+                datetime.fromisoformat(row["created_at"].replace("Z", "+00:00"))
+                if row.get("created_at")
+                else None
+            ),
             started_at=(
                 datetime.fromisoformat(row["started_at"].replace("Z", "+00:00"))
                 if row.get("started_at")
